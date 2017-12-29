@@ -3,10 +3,13 @@
 ## Esimese prototüüp
 
 Eesmärk saavutada midagi sellist (Pilt raamatust GPU Pro 7):
+
 ![Eesmärk](https://raw.githubusercontent.com/jaagupku/volumetric-clouds/master/readmeimages/pic1.png)
 
 
+
 Tulemus:
+
 ![Tulemus](https://raw.githubusercontent.com/jaagupku/volumetric-clouds/master/readmeimages/pic2.png)
 
 ## Asjad mida ei jõudnud
