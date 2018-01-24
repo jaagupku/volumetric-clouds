@@ -6,6 +6,8 @@ using UnityEngine;
 [AddComponentMenu("Effects/Clouds")]
 public class CloudsScript : SceneViewFilter
 {
+    [Range(0.0f, 1.0f)]
+    public float testFloat = 1.0f;
     [HeaderAttribute("Performance")]
     public int steps = 128;
 
@@ -19,6 +21,8 @@ public class CloudsScript : SceneViewFilter
     public float planetSize = 35000.0f;
     [Range(0.0f, 1.0f)]
     public float scale = 0.00041f;
+    [Range(0.0f, 5.0f)]
+    public float erasionScale = 1.0f;
     [Range(0.0f, 1.0f)]
     public float weatheScale = 0.1f;
     [Range(0.0f, 1.0f)]
@@ -170,10 +174,14 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_StartHeight", startHeight);
         EffectMaterial.SetFloat("_Thickness", thickness);
         EffectMaterial.SetFloat("_Scale", scale);
+        EffectMaterial.SetFloat("_ErasionScale", erasionScale);
         EffectMaterial.SetFloat("_WeatherScale", weatheScale * 0.001f);
         EffectMaterial.SetFloat("_Coverage", 1 - coverage);
         EffectMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
         EffectMaterial.SetFloat("_HenyeyGreensteinGBackward", -henyeyGreensteinGBackwardLerp);
+
+
+        EffectMaterial.SetFloat("_TestFloat", testFloat);
 
         EffectMaterial.SetInt("_Steps", steps);
         EffectMaterial.SetFloat("_InverseStep", 128.0f / steps);
@@ -288,7 +296,7 @@ public class CloudsScript : SceneViewFilter
     {
         Texture2D readableTexture2D = getReadableTexture(tex2d);
 
-        Color[] colors = new Color[size * size * size];
+        Color32[] colors = new Color32[size * size * size];
         int idx = 0;
         for (int z = 0; z < size; ++z)
         {
@@ -296,13 +304,19 @@ public class CloudsScript : SceneViewFilter
             {
                 for (int x = 0; x < size; ++x, ++idx)
                 {
-                    colors[idx] = readableTexture2D.GetPixel(x + z * size, y);
+                    if (x == 0 || y == 0 || z == 0)
+                    {
+                        colors[idx] = Color.green;
+                    } else
+                    {
+                        colors[idx] = readableTexture2D.GetPixel(x + z * size, y);
+                    }
                 }
             }
         }
 
         Texture3D texture3D = new Texture3D(size, size, size, TextureFormat.ARGB32, true);
-        texture3D.SetPixels(colors);
+        texture3D.SetPixels32(colors);
         texture3D.Apply();
         return texture3D;
     }

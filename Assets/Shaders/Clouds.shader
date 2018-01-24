@@ -62,8 +62,11 @@
 			uniform float _HenyeyGreensteinGBackward;
 			uniform float _InverseStep;
 			uniform float _LightStepLength;
+			
+			uniform float _TestFloat;
 
 			uniform float _Scale;
+			uniform float _ErasionScale;
 			uniform float _WeatherScale;
 
 			uniform int _Steps;
@@ -141,7 +144,7 @@
 
 			float getDensityHeightGradientForPoint(float3 p, float3 weather_data)
 			{
-				// return densityHeightGradient(getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness)), weather_data.g);
+				//return densityHeightGradient(getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness)), weather_data.g);
 				float height = getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness));
 				return remap(height, 0.0, 0.1, 0.0, 1.0) * remap(height, 0.15, 0.25, 1.0, 0.0);
 			}
@@ -151,22 +154,22 @@
 				float height_fraction = getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness));
 				float4 low_frequency_noises = tex3Dlod(_ShapeTexture, float4(p * _Scale, 0));
 
-				float low_freq_FBM = low_frequency_noises.g * 0.625 + low_frequency_noises.b * 0.25 + low_frequency_noises.a * 0.125;
+				//float low_freq_FBM = low_frequency_noises.g * 0.625 + low_frequency_noises.b * 0.25 + low_frequency_noises.a * 0.125;
 
-				float base_cloud = remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);
+				float base_cloud = low_frequency_noises.r;//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);
 
 				float density_height_gradient = getDensityHeightGradientForPoint(p, weather_data);
 				base_cloud *= density_height_gradient;
 
 				float cloud_coverage = max(0.0, weather_data.r - _Coverage);
-				float base_cloud_with_coverage = saturate(remap(base_cloud, cloud_coverage, 1.0, 0.0, 1.0));
+				float base_cloud_with_coverage = saturate(remap(base_cloud, 1.0 - cloud_coverage, 1.0, 0.0, 1.0));
 
 				base_cloud_with_coverage *= cloud_coverage;
 
 				// TODO p.xy += distort with curl noise
-				float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(p * 7.0 * _Scale, 0)).rgb;
+				float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(p * 7.0 * _Scale * _ErasionScale, 0)).rgb;
 
-				float high_freq_FBM = high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
+				float high_freq_FBM = high_frequency_noises.r;//high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
 
 				float high_freq_noise_modifier = lerp(high_freq_FBM, 1.0 - high_freq_FBM, saturate(height_fraction * 10.0));
 
@@ -221,10 +224,15 @@
 					}
 					
 					float3 weather_data = tex2Dlod(_WeatherTexture, float4(pos.xz * _WeatherScale + float2(0.5, 0.5), 0, 0)).rgb;
+
 					float cloudDensity = sampleCloudDensity(pos, weather_data) * _InverseStep;
 
 					float4 particle = float4(cloudDensity, cloudDensity, cloudDensity, cloudDensity);
 					if (cloudDensity > 0.0) {
+
+						// TEST VARIABLES
+						//float testVariable = sampleCloudDensity(pos, weather_data);
+						//return fixed4(testVariable, testVariable, testVariable, 1.0);
 
 						float T = 1.0 - particle.a;
 						transmittance *= T;
@@ -326,8 +334,23 @@
 
 				// Ray start pos
 				float3 rs = findRayStartPos(ro, rd, planetCenter, _SphereSize + _StartHeight);
+				
 
-				if (rs.y < 0.0)
+
+				// TEXTURE TESTING
+				//float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(rs * 7.0 * _Scale * _ErasionScale, 0)).rgb;
+				//float high_freq_FBM = high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
+				//fixed4 test = tex3D(_ErasionTexture, rs * 7.0 *_Scale * _TestFloat);
+				
+				fixed4 test = tex3Dlod(_ShapeTexture, float4(rs * _Scale, 0));
+				return test;
+				
+				//fixed c = test.r;//high_freq_FBM;
+				//return fixed4(c, c, c, 1.0);
+
+
+
+				if (rs.y < 0.0) // If ray starting position is below horizon
 				{
 					return col;
 				}

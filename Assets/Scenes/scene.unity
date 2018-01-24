@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.45072883, g: 0.49885297, b: 0.5650392, a: 1}
+  m_IndirectSpecularColor: {r: 0.45100462, g: 0.5008582, b: 0.57430506, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -369,17 +369,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e722514e1442ec64785b53affd14f594, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  testFloat: 1
   steps: 64
   cloudShader: {fileID: 4800000, guid: da806f8e56a69844993c619778a0db21, type: 3}
-  cloudShapeSlices: {fileID: 2800000, guid: 5254a004897d6494890ce8bd0362d0c6, type: 3}
-  cloudErasionSlices: {fileID: 2800000, guid: 9bc2209fd774f7c44bd200273b987eb3, type: 3}
+  cloudShapeSlices: {fileID: 2800000, guid: db71f1a65d55e434c93912fe1d23ebeb, type: 3}
+  cloudErasionSlices: {fileID: 2800000, guid: 88bef07e48aad8348b45f491a8b55ec9, type: 3}
   weatherTexture: {fileID: 2800000, guid: 3dc3a7ad2a356df4f984bb72db3c4d43, type: 3}
   startHeight: 1500
   thickness: 3000
   planetSize: 35000
-  scale: 0.00036
+  scale: 0.000766
+  erasionScale: 0
   weatheScale: 0.1
-  coverage: 0.804
+  coverage: 1
   sunLight: {fileID: 1811183545}
   cloudBaseColor: {r: 0.527, g: 0.70985514, b: 1, a: 0}
   cloudTopColor: {r: 1, g: 1, b: 1, a: 0}
@@ -846,13 +848,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1811183544}
-  m_LocalRotation: {x: 0.1997624, y: 0.07771982, z: -0.015897049, w: 0.9766278}
+  m_LocalRotation: {x: 0.29023507, y: 0.08121384, z: -0.024728851, w: 0.9531823}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 23.12, y: 9.1, z: 0}
+  m_LocalEulerAnglesHint: {x: 33.87, y: 9.74, z: 0}
 --- !u!1 &2055417248
 GameObject:
   m_ObjectHideFlags: 0
