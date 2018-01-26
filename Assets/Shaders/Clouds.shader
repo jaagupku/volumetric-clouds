@@ -7,7 +7,7 @@
 	SubShader
 	{
 		// No culling or depth
-		Cull Off ZWrite Off ZTest Always
+		Cull Off ZWrite Off ZTest Off
 
 		Pass
 		{
@@ -252,7 +252,7 @@
 					pos += stepSize * rd;
 				}
 
-				fixed3 color = lerp(col.rgb, res.rgb, res.a);
+				fixed3 color = col.rgb * (1.0 - res.a) + res.rgb;//lerp(col.rgb, res.rgb, res.a);
 
 				return fixed4(color, 1.0);
 			}
@@ -340,12 +340,11 @@
 				// TEXTURE TESTING
 				//float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(rs * 7.0 * _Scale * _ErasionScale, 0)).rgb;
 				//float high_freq_FBM = high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
-				//fixed4 test = tex3D(_ErasionTexture, rs * 7.0 *_Scale * _TestFloat);
-				
+				//fixed4 test = tex3Dlod(_ErasionTexture, float4(rs * 7.0 * _Scale, 0));
 				fixed4 test = tex3Dlod(_ShapeTexture, float4(rs * _Scale, 0));
-				return test;
+				//return test;
 				
-				//fixed c = test.r;//high_freq_FBM;
+				//fixed c = test.a;//high_freq_FBM;
 				//return fixed4(c, c, c, 1.0);
 
 

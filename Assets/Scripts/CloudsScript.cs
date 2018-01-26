@@ -123,12 +123,12 @@ public class CloudsScript : SceneViewFilter
 
         if (cloudShapeTexture == null)
         {
-            cloudShapeTexture = createTexture3DFrom2DSlices(cloudShapeSlices, 128);
+            cloudShapeTexture = createTexture3DFrom2DSlices(cloudShapeSlices, TextureFormat.RGBA32, 128);
         }
 
         if (cloudErasionTexture == null)
         {
-            cloudErasionTexture = createTexture3DFrom2DSlices(cloudErasionSlices, 32);
+            cloudErasionTexture = createTexture3DFrom2DSlices(cloudErasionSlices, TextureFormat.RGB24, 32);
         }
 
         // Set any custom shader variables here.  For example, you could do:
@@ -270,7 +270,7 @@ public class CloudsScript : SceneViewFilter
     }
 
     // https://support.unity3d.com/hc/en-us/articles/206486626-How-can-I-get-pixels-from-unreadable-textures-
-    Texture2D getReadableTexture(Texture2D texture)
+    Texture2D getReadableTexture(Texture2D texture, TextureFormat format)
     {
         // Create a temporary RenderTexture of the same size as the texture
         RenderTexture tmp = RenderTexture.GetTemporary(
@@ -284,7 +284,7 @@ public class CloudsScript : SceneViewFilter
         Graphics.Blit(texture, tmp);
         RenderTexture previous = RenderTexture.active;
         RenderTexture.active = tmp;
-        Texture2D myTexture2D = new Texture2D(texture.width, texture.height);
+        Texture2D myTexture2D = new Texture2D(texture.width, texture.height, format, false);
         myTexture2D.ReadPixels(new Rect(0, 0, tmp.width, tmp.height), 0, 0);
         myTexture2D.Apply();
         RenderTexture.active = previous;
@@ -292,9 +292,9 @@ public class CloudsScript : SceneViewFilter
         return myTexture2D;
     }
 
-    Texture3D createTexture3DFrom2DSlices(Texture2D tex2d, int size)
+    Texture3D createTexture3DFrom2DSlices(Texture2D tex2d, TextureFormat format, int size)
     {
-        Texture2D readableTexture2D = getReadableTexture(tex2d);
+        Texture2D readableTexture2D = getReadableTexture(tex2d, format);
 
         Color32[] colors = new Color32[size * size * size];
         int idx = 0;
@@ -304,13 +304,7 @@ public class CloudsScript : SceneViewFilter
             {
                 for (int x = 0; x < size; ++x, ++idx)
                 {
-                    if (x == 0 || y == 0 || z == 0)
-                    {
-                        colors[idx] = Color.green;
-                    } else
-                    {
-                        colors[idx] = readableTexture2D.GetPixel(x + z * size, y);
-                    }
+                    colors[idx] = readableTexture2D.GetPixel(x + z * size, y);
                 }
             }
         }
