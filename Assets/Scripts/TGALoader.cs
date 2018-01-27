@@ -3,6 +3,7 @@ using System.IO;
 using UnityEngine;
 
 // Based upon https://gist.github.com/mikezila/10557162
+// and http://www.paulbourke.net/dataformats/tga/
 public class TGALoader {
     public static Texture3D load3DFromTGASlices(String path)
     {
