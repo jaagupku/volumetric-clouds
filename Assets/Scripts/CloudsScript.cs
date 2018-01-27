@@ -44,6 +44,8 @@ public class CloudsScript : SceneViewFilter
     public float henyeyGreensteinGBackward = 0.3f;
     [Range(0.0f, 200.0f)]
     public float lightStepLength = 64.0f;
+    [Range(0.0f, 4.0f)]
+    public float density = 1.0f;
 
     private Texture3D cloudShapeTexture;
     private Texture3D cloudErasionTexture;
@@ -123,12 +125,14 @@ public class CloudsScript : SceneViewFilter
 
         if (cloudShapeTexture == null)
         {
-            cloudShapeTexture = createTexture3DFrom2DSlices(cloudShapeSlices, TextureFormat.RGBA32, 128);
+            cloudShapeTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseShapePacked.tga");
+            //cloudShapeTexture = createTexture3DFrom2DSlices(cloudShapeSlices, TextureFormat.RGBA32, 128);
         }
 
         if (cloudErasionTexture == null)
         {
-            cloudErasionTexture = createTexture3DFrom2DSlices(cloudErasionSlices, TextureFormat.RGB24, 32);
+            cloudErasionTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseErosionPacked.tga");
+            //cloudErasionTexture = createTexture3DFrom2DSlices(cloudErasionSlices, TextureFormat.RGB24, 32);
         }
 
         // Set any custom shader variables here.  For example, you could do:
@@ -180,6 +184,7 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
         EffectMaterial.SetFloat("_HenyeyGreensteinGBackward", -henyeyGreensteinGBackwardLerp);
 
+        EffectMaterial.SetFloat("_Density", density);
 
         EffectMaterial.SetFloat("_TestFloat", testFloat);
 
