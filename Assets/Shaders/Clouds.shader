@@ -106,6 +106,7 @@
 				return o;
 			}
 
+			// http://byteblacksmith.com/improvements-to-the-canonical-one-liner-glsl-rand-for-opengl-es-2-0/
 			float rand(float2 co) {
 				float a = 12.9898;
 				float b = 78.233;
@@ -148,7 +149,7 @@
 			{
 				//return densityHeightGradient(getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness)), weather_data.g);
 				float height = getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness));
-				return remap(height, 0.0, 0.1, 0.0, 1.0) * remap(height, 0.15, 0.25, 1.0, 0.0);
+				return saturate(remap(height, 0.0, 0.1, 0.0, 1.0) * remap(height, _TestFloat, _TestFloat + 0.05, 1.0, 0.0));
 			}
 
 			float sampleCloudDensity(float3 p, float3 weather_data)
@@ -180,24 +181,27 @@
 				return final_cloud;
 			}
 
-			float beerLaw(float density)
+			// GPU Pro 7
+			float beerLaw(float density, float weather)
 			{
-				return exp(-density * _Density);
+				return exp(-density * _Density * weather);
 			}
 
+			// GPU Pro 7
 			float HenyeyGreensteinPhase(float cosAngle, float g)
 			{
 				float g2 = g * g;
 				return (1.0 - g2) / pow(1.0 + g2 - 2.0 * g * cosAngle, 1.5);
 			}
 
+			// GPU Pro 7
 			float powderEffect(float density)
 			{
 				return 1.0 -exp(-density * 2.0);
 			}
 
-			float calculateLightEnergy(float density, float cosAngle, float g, float powderDensity) {
-				return saturate(2.0 * beerLaw(density) * powderEffect(powderDensity) * (HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward) + HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * 0.5);
+			float calculateLightEnergy(float density, float cosAngle, float g, float powderDensity, float weather) {
+				return saturate(2.0 * beerLaw(density, 1.0 + weather) * powderEffect(powderDensity) * (HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward) + HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * 0.5);
 			}
 
 			float3 sampleConeToLight(float3 pos, float3 lightDir, float3 weather_data, float cosAngle, float density)
@@ -209,7 +213,7 @@
 					densityAlongCone += sampleCloudDensity(pos, weather_data);
 				}
 				densityAlongCone += sampleCloudDensity(pos + 6.0 * _LightStepLength * lightDir, weather_data) * 2.0;
-				return calculateLightEnergy(densityAlongCone, -cosAngle, 0.2, density) * _SunColor;
+				return calculateLightEnergy(densityAlongCone, -cosAngle, 0.2, density, weather_data.b) * _SunColor;
 			}
 
 			fixed4 raymarch(float3 ro, float3 rd, fixed4 col, float depth, float steps, float stepSize)
@@ -369,8 +373,7 @@
 				// ray (see vert()).  Think of similar triangles: the view-space z-distance between a point
 				// and the camera is proportional to the absolute distance.
 				float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, duv).r);
-				depth *= length(i.ray);
-
+				depth *= length(i.ray)*0.25;
 				//if (length(rs - ro) < depth) {
 					//return tex2Dlod(_WeatherTexture, float4(rs.xz * _WeatherScale + float2(0.5, 0.5), 0, 0));
 				//	return tex3Dlod(_ShapeTexture, float4(rs * _Scale, 0));

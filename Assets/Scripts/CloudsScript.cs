@@ -25,7 +25,7 @@ public class CloudsScript : SceneViewFilter
     public float erasionScale = 1.0f;
     [Range(0.0f, 1.0f)]
     public float weatheScale = 0.1f;
-    [Range(0.0f, 1.0f)]
+    [Range(0.0f, 1.5f)]
     public float coverage = 0.662f;
 
     [HeaderAttribute("Cloud Lighting")]
@@ -273,51 +273,4 @@ public class CloudsScript : SceneViewFilter
         GL.End();
         GL.PopMatrix();
     }
-
-    // https://support.unity3d.com/hc/en-us/articles/206486626-How-can-I-get-pixels-from-unreadable-textures-
-    Texture2D getReadableTexture(Texture2D texture, TextureFormat format)
-    {
-        // Create a temporary RenderTexture of the same size as the texture
-        RenderTexture tmp = RenderTexture.GetTemporary(
-                            texture.width,
-                            texture.height,
-                            0,
-                            RenderTextureFormat.Default,
-                            RenderTextureReadWrite.Linear);
-
-        // Blit the pixels on texture to the RenderTexture
-        Graphics.Blit(texture, tmp);
-        RenderTexture previous = RenderTexture.active;
-        RenderTexture.active = tmp;
-        Texture2D myTexture2D = new Texture2D(texture.width, texture.height, format, false);
-        myTexture2D.ReadPixels(new Rect(0, 0, tmp.width, tmp.height), 0, 0);
-        myTexture2D.Apply();
-        RenderTexture.active = previous;
-        RenderTexture.ReleaseTemporary(tmp);
-        return myTexture2D;
-    }
-
-    Texture3D createTexture3DFrom2DSlices(Texture2D tex2d, TextureFormat format, int size)
-    {
-        Texture2D readableTexture2D = getReadableTexture(tex2d, format);
-
-        Color32[] colors = new Color32[size * size * size];
-        int idx = 0;
-        for (int z = 0; z < size; ++z)
-        {
-            for (int y = 0; y < size; ++y)
-            {
-                for (int x = 0; x < size; ++x, ++idx)
-                {
-                    colors[idx] = readableTexture2D.GetPixel(x + z * size, y);
-                }
-            }
-        }
-
-        Texture3D texture3D = new Texture3D(size, size, size, TextureFormat.ARGB32, true);
-        texture3D.SetPixels32(colors);
-        texture3D.Apply();
-        return texture3D;
-    }
-
 }
