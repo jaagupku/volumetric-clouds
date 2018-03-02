@@ -39,7 +39,7 @@ public class TGALoader {
 
                     colors[idx] = new Color32(alpha, blue, green, red);
                 }
-                result = new Texture3D(height, height, height, TextureFormat.RGBA32, false);
+                result = new Texture3D(height, height, height, TextureFormat.RGBA32, true);
             }
             else if (bitDepth == 24)
             {
@@ -57,7 +57,7 @@ public class TGALoader {
 
                     colors[idx] = new Color32(blue, green, red, 1);
                 }
-                result = new Texture3D(height, height, height, TextureFormat.RGB24, false);
+                result = new Texture3D(height, height, height, TextureFormat.RGB24, true);
             }
             else
             {

@@ -8,8 +8,30 @@ public class CloudsScript : SceneViewFilter
 {
     [Range(0.0f, 1.0f)]
     public float testFloat = 1.0f;
+    [Range(0.0f, 1.0f)]
+    public float testFloat2 = 1.0f;
+    public Gradient testGradient;
+    private Vector4 _testGradient;
+
+    [HeaderAttribute("Step Testing")]
+    public AnimationCurve stepTestCurve;
+    public bool test = true;
+    [Range(0.1f, 1.0f)]
+    public float power = 0.125f;
+    [Range(0.0f, 4.0f)]
+    public float stepMultiplier = 2.0f;
+    [Range(0.0f, 8.0f)]
+    public float testMultiplier = 2.0f;
+
+    [HeaderAttribute("Debugging")]
+    public bool debugNoLowFreqNoise = false;
+    public bool debugNoHighFreqNoise = false;
+    public bool debugDensityOnly = false;
+
     [HeaderAttribute("Performance")]
+    [Range(1, 256)]
     public int steps = 128;
+    public bool allowFlyingInClouds = false;
 
     [HeaderAttribute("Cloud modeling")]
     public Shader cloudShader;
@@ -19,13 +41,16 @@ public class CloudsScript : SceneViewFilter
     public float startHeight = 1500.0f;
     public float thickness = 4000.0f;
     public float planetSize = 35000.0f;
+    public Vector3 planetZeroCoordinate = new Vector3(0.0f, 0.0f, 0.0f);
     [Range(0.0f, 1.0f)]
     public float scale = 0.00041f;
-    [Range(0.0f, 5.0f)]
-    public float erasionScale = 1.0f;
+    [Range(0.0f, 16.0f)]
+    public float erasionScale = 7.0f;
+    [Range(0.0f, 1.0f)]
+    public float highFreqModifier = 0.2f;
     [Range(0.0f, 1.0f)]
     public float weatheScale = 0.1f;
-    [Range(0.0f, 1.5f)]
+    [Range(0.0f, 2.0f)]
     public float coverage = 0.662f;
 
     [HeaderAttribute("Cloud Lighting")]
@@ -46,6 +71,13 @@ public class CloudsScript : SceneViewFilter
     public float lightStepLength = 64.0f;
     [Range(0.0f, 4.0f)]
     public float density = 1.0f;
+
+    [HeaderAttribute("Animating")]
+    public float windSpeed = 0.0f;
+    public float windDirection = 0.0f;
+    private Vector2 windOffset = new Vector2(0.0f, 0.0f);
+    private Vector2 windDirectionVector;
+    private float multipliedWindSpeed;
 
     private Texture3D cloudShapeTexture;
     private Texture3D cloudErasionTexture;
@@ -114,6 +146,19 @@ public class CloudsScript : SceneViewFilter
         */
     }
 
+    private Vector4 gradientToVector4( Gradient gradient )
+    {
+        if (gradient.colorKeys.Length != 4)
+        {
+            return new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+        }
+        float x = gradient.colorKeys[0].time;
+        float y = gradient.colorKeys[1].time;
+        float z = gradient.colorKeys[2].time;
+        float w = gradient.colorKeys[3].time;
+        return new Vector4(x, y, z, w);
+    }
+
     [ImageEffectOpaque]
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
@@ -160,12 +205,17 @@ public class CloudsScript : SceneViewFilter
             cloudTopColorMix = Color.Lerp(lowSunColor, cloudTopColor, gradient);
         }
 
+        updateMaterialKeyword(debugNoLowFreqNoise, "DEBUG_NO_LOW_FREQ_NOISE");
+        updateMaterialKeyword(debugNoHighFreqNoise, "DEBUG_NO_HIGH_FREQ_NOISE");
+        updateMaterialKeyword(debugDensityOnly, "DEBUG_DENSITY");
+        updateMaterialKeyword(allowFlyingInClouds, "ALLOW_IN_CLOUDS");
+
         EffectMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
-        EffectMaterial.SetVector("_PlanetCenter", cameraPos - new Vector3(0, planetSize, 0));
+        EffectMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
         EffectMaterial.SetColor("_SunColor", sunColor);
 
         EffectMaterial.SetColor("_CloudBaseColor", cloudBaseColor);
-        EffectMaterial.SetColor("_CloudTopColor", cloudTopColorMix);
+        EffectMaterial.SetColor("_CloudTopColor", cloudTopColor);
         EffectMaterial.SetFloat("_AmbientLightFactor", ambientLightFactorUpdated);
         EffectMaterial.SetFloat("_SunLightFactor", sunLightFactorUpdated);
 
@@ -177,8 +227,9 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_SphereSize", planetSize);
         EffectMaterial.SetFloat("_StartHeight", startHeight);
         EffectMaterial.SetFloat("_Thickness", thickness);
-        EffectMaterial.SetFloat("_Scale", scale);
-        EffectMaterial.SetFloat("_ErasionScale", erasionScale);
+        EffectMaterial.SetFloat("_Scale", 0.0001f + scale * 0.001f);
+        EffectMaterial.SetFloat("_ErasionScale", erasionScale); 
+        EffectMaterial.SetFloat("_HighFreqModifier", highFreqModifier);
         EffectMaterial.SetFloat("_WeatherScale", weatheScale * 0.001f);
         EffectMaterial.SetFloat("_Coverage", 1 - coverage);
         EffectMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
@@ -186,16 +237,52 @@ public class CloudsScript : SceneViewFilter
 
         EffectMaterial.SetFloat("_Density", density);
 
+        EffectMaterial.SetFloat("_WindSpeed", multipliedWindSpeed);
+        EffectMaterial.SetVector("_WindDirection", windDirectionVector);
+        EffectMaterial.SetVector("_WindOffset", windOffset);
+
+        // Test uniforms
         EffectMaterial.SetFloat("_TestFloat", testFloat);
+        EffectMaterial.SetFloat("_TestFloat2", testFloat2);
+        EffectMaterial.SetVector("_TestGradient", gradientToVector4(testGradient));
 
         EffectMaterial.SetInt("_Steps", steps);
-        EffectMaterial.SetFloat("_InverseStep", 128.0f / steps);
+        if (test)
+        {
+            //EffectMaterial.SetFloat("_InverseStep", Mathf.Pow(stepMultiplier / steps, power) * testMultiplier);
+            EffectMaterial.SetFloat("_InverseStep", stepTestCurve.Evaluate(steps / 256.0f));
+        }
+        else
+        {
+            EffectMaterial.SetFloat("_InverseStep", 1.0f);
+        }
 
         EffectMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
         EffectMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
         EffectMaterial.SetVector("_CameraWS", cameraPos);
 
         CustomGraphicsBlit(source, destination, EffectMaterial, 0);
+    }
+
+    private void Update()
+    {
+        //steps = ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 256f));
+        multipliedWindSpeed = windSpeed * 10.0f;
+        float angle = windDirection * Mathf.Deg2Rad;
+        windDirectionVector = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+        windOffset += multipliedWindSpeed * windDirectionVector * Time.deltaTime;
+    }
+
+    private void updateMaterialKeyword(bool b, string keyword)
+    {
+        if (b)
+        {
+            EffectMaterial.EnableKeyword(keyword);
+        }
+        else
+        {
+            EffectMaterial.DisableKeyword(keyword);
+        }
     }
 
     /// \brief Stores the normalized rays representing the camera frustum in a 4x4 matrix.  Each row is a vector.
