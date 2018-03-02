@@ -13,6 +13,7 @@ public class FirstPersonController : MonoBehaviour {
     private CharacterController cc;
     private bool rotate;
     private float currentSpeed;
+    private bool flying = false;
 
     private float verticalVelocity = 0;
 
@@ -41,6 +42,7 @@ public class FirstPersonController : MonoBehaviour {
     void Update () {
         float vertical = Input.GetAxis("Vertical");
         float horizontal = Input.GetAxis("Horizontal");
+        currentSpeed = speed;
 
         if (rotate)
         {
@@ -53,20 +55,39 @@ public class FirstPersonController : MonoBehaviour {
             transform.Rotate(0, rotX, 0);
         }
 
-        if (cc.isGrounded)
+        if (!flying)
         {
-            verticalVelocity = 0;
-            if (Input.GetButton("Jump"))
+            if (cc.isGrounded) // Jumping
             {
-                verticalVelocity = jumpSpeed;
+                verticalVelocity = 0;
+                if (Input.GetButton("Jump"))
+                {
+                    verticalVelocity = jumpSpeed;
+                }
+            }
+            else
+            {
+                verticalVelocity += Physics.gravity.y * Time.deltaTime;
+            }
+        } else
+        {
+            //float a = Mathf.Clamp(cc.transform.position.y / 2000.0f, 0.2f, 10.0f);
+            currentSpeed = speed * 300.0f;
+            if (Input.GetKey("q"))
+            {
+                verticalVelocity = 1.0f;
+            }
+            else if (Input.GetKey("e"))
+            {
+                verticalVelocity = -1.0f;
+            }
+            else
+            {
+                verticalVelocity = 0.0f;
             }
         }
-        else
-        {
-            verticalVelocity += Physics.gravity.y * Time.deltaTime;
-        }
 
-        if (Input.GetKey("c"))
+        if (Input.GetKey("c")) // Crouching
         {
             cc.height = 0.2f;
         }
@@ -74,16 +95,20 @@ public class FirstPersonController : MonoBehaviour {
         {
             cc.height = 2;
         }
-
-        currentSpeed = speed;
-        if (Input.GetKey(KeyCode.LeftShift))
+        
+        if (Input.GetKey(KeyCode.LeftShift)) // Sprinting
         {
-            currentSpeed = 2.2f * speed;
+            currentSpeed *= 2.2f;
             //Camera.main.fieldOfView = 100;
         }
         else
         {
             //Camera.main.fieldOfView = 80;
+        }
+
+        if (Input.GetKeyDown("f")) // Toggle Flying
+        {
+            flying = !flying;
         }
 
         Vector3 movement = transform.rotation * new Vector3(horizontal, verticalVelocity, vertical);

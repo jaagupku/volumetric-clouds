@@ -41,6 +41,7 @@
 			uniform float4x4 _CameraInvViewMatrix;
 			uniform float4x4 _FrustumCornersES;
 			uniform float4 _CameraWS;
+			uniform float _FarPlane;
 
 			uniform sampler2D _MainTex;
 			uniform float4 _MainTex_TexelSize;
@@ -48,6 +49,7 @@
 			uniform sampler3D _ShapeTexture;
 			uniform sampler3D _ErasionTexture;
 			uniform sampler2D _WeatherTexture;
+			uniform sampler2D _CurlNoise;
 
 			uniform float3 _SunDir;
 			uniform float3 _PlanetCenter;
@@ -77,6 +79,8 @@
 			uniform float _Scale;
 			uniform float _ErasionScale;
 			uniform float _WeatherScale;
+			uniform float _CurlDistortScale;
+			uniform float _CurlDistortAmount;
 
 			uniform float _WindSpeed;
 			uniform float2 _WindDirection;
@@ -161,7 +165,7 @@
 #else
 				float4 low_frequency_noises = tex3Dlod(_ShapeTexture, float4(pos * _Scale, lod));
 				//float low_freq_FBM = low_frequency_noises.g * 0.625 +low_frequency_noises.b * 0.25 + low_frequency_noises.a * 0.125;
-				float base_cloud = max(0.0, low_frequency_noises.r) * (1.15 - height_fraction);//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);//
+				float base_cloud = max(0.0, low_frequency_noises.r) * pow(1.15 - height_fraction, 0.7);//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);//
 				base_cloud = remap(base_cloud, _TestFloat, _TestFloat2, 0.0, 1.0);
 				
 #endif
@@ -177,8 +181,12 @@
 				// TODO p.xy += distort with curl noise
 #if defined(DEBUG_NO_HIGH_FREQ_NOISE)
 #else
+				float3 curl_noise = tex2Dlod(_CurlNoise, float4(p.xy * _Scale * _CurlDistortScale, 0, 0)).rgb * 2.0 - 1.0;
+
+				pos += curl_noise * height_fraction * _CurlDistortAmount;
+
 				float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(pos * _Scale * _ErasionScale, lod)).rgb;
-				float high_freq_FBM = high_frequency_noises.r;//high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
+				float high_freq_FBM = 1.0 - high_frequency_noises.r;//high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
 
 				float high_freq_noise_modifier = lerp(high_freq_FBM, 1.0 - high_freq_FBM, saturate(height_fraction * 10.0));
 
@@ -370,8 +378,9 @@
 				// TEXTURE TESTING
 				//float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(rs * 7.0 * _Scale * _ErasionScale, 0)).rgb;
 				//float high_freq_FBM = high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
-				//fixed4 test = tex3Dlod(_ErasionTexture, float4(rs * 7.0 * _Scale, 0));
+				//fixed4 test = tex3Dlod(_ErasionTexture, float4(rs * _ErasionScale * _Scale, 0));
 				//fixed4 test = tex3Dlod(_ShapeTexture, float4(rs * _Scale, 0));
+				//fixed4 test = tex2Dlod(_CurlNoise, float4(rs.xz * _Scale * _CurlDistortScale, 0, 0));
 				//return test;
 				
 				//fixed c = test.r;//high_freq_FBM;
@@ -393,7 +402,7 @@
 				if (depth > 0.999) {
 					depth = 100.0;
 				}
-				depth *= 1000.0;
+				depth *= _FarPlane;
 				//if (length(rs - ro) < depth) {
 					//return tex2Dlod(_WeatherTexture, float4(rs.xz * _WeatherScale + float2(0.5, 0.5), 0, 0));
 				//	return tex3Dlod(_ShapeTexture, float4(rs * _Scale, 0));

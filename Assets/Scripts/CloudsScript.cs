@@ -35,45 +35,48 @@ public class CloudsScript : SceneViewFilter
 
     [HeaderAttribute("Cloud modeling")]
     public Shader cloudShader;
-    public Texture2D cloudShapeSlices;
-    public Texture2D cloudErasionSlices;
     public Texture2D weatherTexture;
+    public Texture2D curlNoise;
     public float startHeight = 1500.0f;
     public float thickness = 4000.0f;
     public float planetSize = 35000.0f;
     public Vector3 planetZeroCoordinate = new Vector3(0.0f, 0.0f, 0.0f);
     [Range(0.0f, 1.0f)]
-    public float scale = 0.00041f;
-    [Range(0.0f, 16.0f)]
-    public float erasionScale = 7.0f;
+    public float scale = 0.128f;
+    [Range(0.0f, 32.0f)]
+    public float erasionScale = 18.7f;
     [Range(0.0f, 1.0f)]
-    public float highFreqModifier = 0.2f;
+    public float highFreqModifier = 0.21f;
+    [Range(0.0f, 10.0f)]
+    public float curlDistortScale = 1.78f;
+    [Range(0.0f, 1000.0f)]
+    public float curlDistortAmount = 407.0f;
     [Range(0.0f, 1.0f)]
     public float weatheScale = 0.1f;
     [Range(0.0f, 2.0f)]
-    public float coverage = 0.662f;
+    public float coverage = 0.92f;
 
     [HeaderAttribute("Cloud Lighting")]
     public Light sunLight;
-    public Color cloudBaseColor = new Color32(145, 192, 212, 255);
+    public Color cloudBaseColor = new Color32(199, 220, 255, 255);
     public Color cloudTopColor = new Color32(255, 255, 255, 255);
     [Range(0.0f, 1.0f)]
-    public float ambientLightFactor = 0.5f;
+    public float ambientLightFactor = 0.551f;
     [Range(0.0f, 1.0f)]
-    public float sunLightFactor = 0.733f;
+    public float sunLightFactor = 0.79f;
     public Color highSunColor = new Color32(255, 252, 210, 255);
-    public Color lowSunColor = new Color32(255, 164, 0, 255);
+    public Color lowSunColor = new Color32(255, 174, 0, 255);
     [Range(0.0f, 1.0f)]
-    public float henyeyGreensteinGForward = 0.8f;
+    public float henyeyGreensteinGForward = 0.4f;
     [Range(0.0f, 1.0f)]
-    public float henyeyGreensteinGBackward = 0.3f;
+    public float henyeyGreensteinGBackward = 0.179f;
     [Range(0.0f, 200.0f)]
     public float lightStepLength = 64.0f;
     [Range(0.0f, 4.0f)]
     public float density = 1.0f;
 
     [HeaderAttribute("Animating")]
-    public float windSpeed = 0.0f;
+    public float windSpeed = 2.57f;
     public float windDirection = 0.0f;
     private Vector2 windOffset = new Vector2(0.0f, 0.0f);
     private Vector2 windDirectionVector;
@@ -162,7 +165,7 @@ public class CloudsScript : SceneViewFilter
     [ImageEffectOpaque]
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        if (!EffectMaterial == null || cloudShapeSlices == null || cloudErasionSlices == null || weatherTexture == null)
+        if (!EffectMaterial == null || weatherTexture == null || curlNoise == null)
         {
             Graphics.Blit(source, destination); // do nothing
             return;
@@ -171,13 +174,11 @@ public class CloudsScript : SceneViewFilter
         if (cloudShapeTexture == null)
         {
             cloudShapeTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseShapePacked.tga");
-            //cloudShapeTexture = createTexture3DFrom2DSlices(cloudShapeSlices, TextureFormat.RGBA32, 128);
         }
 
         if (cloudErasionTexture == null)
         {
             cloudErasionTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseErosionPacked.tga");
-            //cloudErasionTexture = createTexture3DFrom2DSlices(cloudErasionSlices, TextureFormat.RGB24, 32);
         }
 
         // Set any custom shader variables here.  For example, you could do:
@@ -222,7 +223,11 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetTexture("_ShapeTexture", cloudShapeTexture);
         EffectMaterial.SetTexture("_ErasionTexture", cloudErasionTexture);
         EffectMaterial.SetTexture("_WeatherTexture", weatherTexture);
+        EffectMaterial.SetTexture("_CurlNoise", curlNoise);
         
+        EffectMaterial.SetFloat("_CurlDistortAmount", curlDistortAmount);
+        EffectMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
+
         EffectMaterial.SetFloat("_LightStepLength", lightStepLength);
         EffectMaterial.SetFloat("_SphereSize", planetSize);
         EffectMaterial.SetFloat("_StartHeight", startHeight);
@@ -260,6 +265,7 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
         EffectMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
         EffectMaterial.SetVector("_CameraWS", cameraPos);
+        EffectMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
         CustomGraphicsBlit(source, destination, EffectMaterial, 0);
     }

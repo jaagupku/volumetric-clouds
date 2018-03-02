@@ -3,6 +3,7 @@
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
+		_Gradient ("Gradient", Vector) = (0.0, 0.1, 0.2, 0.3)
 		[Toggle] _BetterGradient ("BetterGradient", Float) = 0.0
 	}
 	Fallback "VertexLit"
@@ -67,11 +68,12 @@
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				fixed4 col = tex2D(_MainTex, i.uv);
 				float a = 0.0;
-				a += improvedGradient(float4(0.0, 0.1, 0.2, 0.7), i.uv.y) * _BetterGradient;
-				a += remapBased(float4(0.0, 0.1, 0.2, 0.3), i.uv.y) * (1.0 - _BetterGradient);
-				return fixed4(a, a, a, 1.0);
+				a += improvedGradient(_Gradient, i.uv.y) * _BetterGradient;
+				a += remapBased(_Gradient, i.uv.y) * (1.0 - _BetterGradient);
+				fixed4 col = fixed4(a, a, a, 1.0);
+				UNITY_APPLY_FOG(i.fogCoord, col);
+				return col;
 			}
 			ENDCG
 		}
