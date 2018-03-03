@@ -254,7 +254,6 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetInt("_Steps", steps);
         if (test)
         {
-            //EffectMaterial.SetFloat("_InverseStep", Mathf.Pow(stepMultiplier / steps, power) * testMultiplier);
             EffectMaterial.SetFloat("_InverseStep", stepTestCurve.Evaluate(steps / 256.0f));
         }
         else
@@ -272,7 +271,7 @@ public class CloudsScript : SceneViewFilter
 
     private void Update()
     {
-        //steps = ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 256f));
+        //steps = 6 + ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 250f));
         multipliedWindSpeed = windSpeed * 10.0f;
         float angle = windDirection * Mathf.Deg2Rad;
         windDirectionVector = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));

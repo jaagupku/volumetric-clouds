@@ -251,7 +251,7 @@
 					}
 #endif
 					float3 weather_data = tex2Dlod(_WeatherTexture, float4(pos.xz * _WeatherScale + float2(0.5, 0.5), 0, 0)).rgb;
-					if (weather_data.r < 0.1)
+					if (saturate(weather_data.r - _Coverage) < 0.01)
 					{
 						pos += 2.0 * stepSize * rd;
 						i++;

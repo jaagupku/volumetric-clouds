@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44362158, g: 0.48649514, b: 0.5377588, a: 1}
+  m_IndirectSpecularColor: {r: 0.4471957, g: 0.49246687, b: 0.5501499, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -108,6 +108,90 @@ NavMeshSettings:
     tileSize: 256
     accuratePlacement: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &163696191
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 163696195}
+  - component: {fileID: 163696194}
+  - component: {fileID: 163696193}
+  - component: {fileID: 163696192}
+  m_Layer: 0
+  m_Name: Quad
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &163696192
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 163696191}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_Materials:
+  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+--- !u!64 &163696193
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 163696191}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Convex: 0
+  m_InflateMesh: 0
+  m_SkinWidth: 0.01
+  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!33 &163696194
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 163696191}
+  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &163696195
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 163696191}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 25, y: 8, z: 12}
+  m_LocalScale: {x: 10, y: 10, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &212858089
 GameObject:
   m_ObjectHideFlags: 0
@@ -407,29 +491,41 @@ MonoBehaviour:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 2
-      time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
+      time: -0.0012444332
+      value: 3.0191503
+      inSlope: -11.323347
+      outSlope: -11.323347
       tangentMode: 0
     - serializedVersion: 2
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
+      time: 0.2500767
+      value: 1.232814
+      inSlope: -1.7713436
+      outSlope: -1.7713436
+      tangentMode: 0
+    - serializedVersion: 2
+      time: 0.49958354
+      value: 0.9970559
+      inSlope: -0.6612613
+      outSlope: -0.6612613
+      tangentMode: 0
+    - serializedVersion: 2
+      time: 1.0005788
+      value: 0.89243925
+      inSlope: -0.08610645
+      outSlope: -0.08610645
       tangentMode: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 0
-  test: 0
+  test: 1
   power: 0.125
   stepMultiplier: 2
   testMultiplier: 2
   debugNoLowFreqNoise: 0
   debugNoHighFreqNoise: 0
   debugDensityOnly: 0
-  steps: 128
-  allowFlyingInClouds: 1
+  steps: 63
+  allowFlyingInClouds: 0
   cloudShader: {fileID: 4800000, guid: da806f8e56a69844993c619778a0db21, type: 3}
   weatherTexture: {fileID: 2800000, guid: 41b57a2ab43892b449d1cfe1a8846eaf, type: 3}
   curlNoise: {fileID: 2800000, guid: 1da5997523109fa4bad6ecd76ad147bc, type: 3}
@@ -439,20 +535,20 @@ MonoBehaviour:
   planetZeroCoordinate: {x: 0, y: 0, z: 0}
   scale: 0.128
   erasionScale: 18.7
-  highFreqModifier: 0.192
-  curlDistortScale: 1.78
-  curlDistortAmount: 407
+  highFreqModifier: 0.21
+  curlDistortScale: 1.47
+  curlDistortAmount: 337
   weatheScale: 0.1
   coverage: 0.92
   sunLight: {fileID: 1811183545}
   cloudBaseColor: {r: 0.7794118, g: 0.8646881, b: 1, a: 0}
   cloudTopColor: {r: 1, g: 1, b: 1, a: 0}
-  ambientLightFactor: 0.519
+  ambientLightFactor: 0.551
   sunLightFactor: 0.79
   highSunColor: {r: 1, g: 0.9882353, b: 0.8235294, a: 1}
   lowSunColor: {r: 1, g: 0.6827587, b: 0, a: 1}
-  henyeyGreensteinGForward: 0.477
-  henyeyGreensteinGBackward: 0.184
+  henyeyGreensteinGForward: 0.4
+  henyeyGreensteinGBackward: 0.092
   lightStepLength: 64
   density: 1
   windSpeed: 2.57
@@ -1066,13 +1162,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1811183544}
-  m_LocalRotation: {x: 0.11884334, y: 0.08394394, z: -0.010084009, w: 0.98930687}
+  m_LocalRotation: {x: 0.1420036, y: 0.22002773, z: -0.03239277, w: 0.9645587}
   m_LocalPosition: {x: 0, y: 30.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 13.7, y: 9.7, z: 0}
+  m_LocalEulerAnglesHint: {x: 16.75, y: 25.7, z: 0}
 --- !u!1 &2055417248
 GameObject:
   m_ObjectHideFlags: 0
