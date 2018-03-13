@@ -51,6 +51,7 @@
 			uniform sampler2D _WeatherTexture;
 			uniform sampler2D _CurlNoise;
 			uniform sampler2D _BlueNoise;
+			uniform float4 _BlueNoise_TexelSize;
 			uniform float4 _Randomness;
 
 			uniform float3 _SunDir;
@@ -176,7 +177,7 @@
 #else
 				float4 low_frequency_noises = tex3Dlod(_ShapeTexture, float4(pos * _Scale, lod));
 				//float low_freq_FBM = low_frequency_noises.g * 0.625 +low_frequency_noises.b * 0.25 + low_frequency_noises.a * 0.125;
-				float base_cloud = max(0.0, low_frequency_noises.r) * pow(1.15 - height_fraction, 0.7);//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);//
+				float base_cloud = max(0.0, low_frequency_noises.r) * pow(1.15 - height_fraction, 0.5);//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);//
 				base_cloud = remap(base_cloud, _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0);
 #endif
 				//float density_height_gradient = getDensityHeightGradientForPoint(p, weather_data);
@@ -444,13 +445,11 @@
 				
 				// Ray end pos
 
-				float steps = _Steps;
-				float stepSize = _Thickness / steps;
-				steps = steps * (distance(re, rs)) / _Thickness;
-				//return fixed4(steps, steps, steps, 1.0);
+				float steps = lerp(_Steps, _Steps * 0.5, rd.y);
+				float stepSize = (distance(re, rs)) / steps;
 
-				//rs += rd * stepSize * rand(_Time.zw + duv);
-				rs += rd * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy / 512.0, stepSize);
+				rs += rd * stepSize * rand(_Time.zw + duv);
+				//rs += rd * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy, stepSize);
 
 				//float2 ruv = (duv + _Randomness.xy) * _ScreenParams.xy / 512.0;
 				//return tex2D(_BlueNoise, ruv);
