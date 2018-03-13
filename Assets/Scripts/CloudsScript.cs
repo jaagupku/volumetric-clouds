@@ -18,6 +18,10 @@ public class CloudsScript : SceneViewFilter
     public bool debugNoHighFreqNoise = false;
     public bool debugDensityOnly = false;
 
+    [HeaderAttribute("System")]
+    public Shader cloudShader;
+    public Shader postProcessCloudsShader;
+
     [HeaderAttribute("Performance")]
     [Range(1, 256)]
     public int steps = 128;
@@ -27,7 +31,6 @@ public class CloudsScript : SceneViewFilter
     public Texture2D blueNoiseTexture;
 
     [HeaderAttribute("Cloud modeling")]
-    public Shader cloudShader;
     public Texture2D weatherTexture;
     public Texture2D curlNoise;
     public float startHeight = 1500.0f;
@@ -80,13 +83,14 @@ public class CloudsScript : SceneViewFilter
     public float windDirection = 0.0f;
     public float coverageWindSpeed = 0.0f;
     public float coverageWindDirection = 0.0f;
-    private Vector3 windOffset = new Vector3(0.0f, 0.0f, 0.0f);
-    private Vector2 coverageWindOffset = new Vector3(0.0f, 0.0f);
-    private Vector3 windDirectionVector;
-    private float multipliedWindSpeed;
+    private Vector3 _windOffset = new Vector3(0.0f, 0.0f, 0.0f);
+    private Vector2 _coverageWindOffset = new Vector3(0.0f, 0.0f);
+    private Vector3 _windDirectionVector;
+    private float _multipliedWindSpeed;
 
-    private Texture3D cloudShapeTexture;
-    private Texture3D cloudErasionTexture;
+    private Texture3D _cloudShapeTexture;
+    private Texture3D _cloudErasionTexture;
+    private RenderTexture _cloudRenderTexture;
 
     public Material EffectMaterial
     {
@@ -103,10 +107,33 @@ public class CloudsScript : SceneViewFilter
     }
     private Material _EffectMaterial;
 
+    public Material UpscaleMaterial
+    {
+        get
+        {
+            if (!_UpscaleMaterial && postProcessCloudsShader)
+            {
+                _UpscaleMaterial = new Material(cloudShader);
+                _UpscaleMaterial.hideFlags = HideFlags.HideAndDontSave;
+            }
+
+            return _UpscaleMaterial;
+        }
+    }
+    private Material _UpscaleMaterial;
+
     void Start()
     {
         if (_EffectMaterial)
             DestroyImmediate(_EffectMaterial);
+        createRenderTexture();
+    }
+
+    private void OnDestroy()
+    {
+        if (_EffectMaterial)
+            DestroyImmediate(_EffectMaterial);
+        destroyRenderTexture();
     }
 
     public Camera CurrentCamera
@@ -149,7 +176,23 @@ public class CloudsScript : SceneViewFilter
                 Gizmos.DrawLine(pos + (Vector3)w, pos + (Vector3)w * 1.2f);
             }
         }
-        */
+        */   
+    }
+
+    private void createRenderTexture()
+    {
+        if (_cloudRenderTexture == null)
+        {
+            _cloudRenderTexture = new RenderTexture(230, 120, 0, CurrentCamera.allowHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, RenderTextureReadWrite.Default);
+            _cloudRenderTexture.filterMode = FilterMode.Bilinear;
+            _cloudRenderTexture.hideFlags = HideFlags.HideAndDontSave;
+        }
+    }
+
+    private void destroyRenderTexture()
+    {
+        DestroyImmediate(_cloudRenderTexture);
+        _cloudRenderTexture = null;
     }
 
     private Vector4 gradientToVector4( Gradient gradient )
@@ -166,7 +209,7 @@ public class CloudsScript : SceneViewFilter
     }
 
     [ImageEffectOpaque]
-    void OnRenderImage(RenderTexture source, RenderTexture destination)
+    public void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         if (!EffectMaterial == null || weatherTexture == null || curlNoise == null || blueNoiseTexture == null)
         {
@@ -174,14 +217,14 @@ public class CloudsScript : SceneViewFilter
             return;
         }
 
-        if (cloudShapeTexture == null)
+        if (_cloudShapeTexture == null)
         {
-            cloudShapeTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseShapePacked.tga");
+            _cloudShapeTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseShapePacked.tga");
         }
 
-        if (cloudErasionTexture == null)
+        if (_cloudErasionTexture == null)
         {
-            cloudErasionTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseErosionPacked.tga");
+            _cloudErasionTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseErosionPacked.tga");
         }
 
         // Set any custom shader variables here.  For example, you could do:
@@ -223,8 +266,8 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_AmbientLightFactor", ambientLightFactorUpdated);
         EffectMaterial.SetFloat("_SunLightFactor", sunLightFactorUpdated);
 
-        EffectMaterial.SetTexture("_ShapeTexture", cloudShapeTexture);
-        EffectMaterial.SetTexture("_ErasionTexture", cloudErasionTexture);
+        EffectMaterial.SetTexture("_ShapeTexture", _cloudShapeTexture);
+        EffectMaterial.SetTexture("_ErasionTexture", _cloudErasionTexture);
         EffectMaterial.SetTexture("_WeatherTexture", weatherTexture);
         EffectMaterial.SetTexture("_CurlNoise", curlNoise);
         EffectMaterial.SetTexture("_BlueNoise", blueNoiseTexture);
@@ -250,10 +293,10 @@ public class CloudsScript : SceneViewFilter
 
         EffectMaterial.SetFloat("_Density", density);
 
-        EffectMaterial.SetFloat("_WindSpeed", multipliedWindSpeed);
-        EffectMaterial.SetVector("_WindDirection", windDirectionVector);
-        EffectMaterial.SetVector("_WindOffset", windOffset);
-        EffectMaterial.SetVector("_CoverageWindOffset", coverageWindOffset);
+        EffectMaterial.SetFloat("_WindSpeed", _multipliedWindSpeed);
+        EffectMaterial.SetVector("_WindDirection", _windDirectionVector);
+        EffectMaterial.SetVector("_WindOffset", _windOffset);
+        EffectMaterial.SetVector("_CoverageWindOffset", _coverageWindOffset);
 
         // Test uniforms
         EffectMaterial.SetFloat("_TestFloat", testFloat);
@@ -280,14 +323,14 @@ public class CloudsScript : SceneViewFilter
     private void Update()
     {
         //steps = 6 + ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 250f));
-        multipliedWindSpeed = windSpeed * globalMultiplier;
+        _multipliedWindSpeed = windSpeed * globalMultiplier;
         float angleWind = windDirection * Mathf.Deg2Rad;
-        windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.01f, Mathf.Sin(angleWind));
-        windOffset += multipliedWindSpeed * windDirectionVector * Time.deltaTime;
+        _windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.01f, Mathf.Sin(angleWind));
+        _windOffset += _multipliedWindSpeed * _windDirectionVector * Time.deltaTime;
 
         float angleCoverage = coverageWindDirection * Mathf.Deg2Rad;
         Vector2 coverageDirecton = new Vector2(Mathf.Cos(angleCoverage), Mathf.Sin(angleCoverage));
-        coverageWindOffset += coverageWindSpeed * globalMultiplier * coverageDirecton;
+        _coverageWindOffset += coverageWindSpeed * globalMultiplier * coverageDirecton;
     }
 
     private void updateMaterialKeyword(bool b, string keyword)
@@ -346,7 +389,7 @@ public class CloudsScript : SceneViewFilter
     /// 
     /// \warning You may need to account for flipped UVs on DirectX machines due to differing UV semantics
     ///          between OpenGL and DirectX.  Use the shader define UNITY_UV_STARTS_AT_TOP to account for this.
-    static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNr)
+    void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNr)
     {
         RenderTexture.active = dest;
 

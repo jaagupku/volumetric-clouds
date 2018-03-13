@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44988853, g: 0.49721456, b: 0.56087047, a: 1}
+  m_IndirectSpecularColor: {r: 0.4487893, g: 0.49522746, b: 0.55622435, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -490,7 +490,7 @@ MonoBehaviour:
   debugNoLowFreqNoise: 0
   debugNoHighFreqNoise: 0
   debugDensityOnly: 0
-  steps: 128
+  steps: 32
   adjustDensity: 1
   stepDensityAdjustmentCurve:
     serializedVersion: 2
@@ -549,9 +549,9 @@ MonoBehaviour:
   lowSunColor: {r: 1, g: 0.6827587, b: 0, a: 1}
   henyeyGreensteinGForward: 0.204
   henyeyGreensteinGBackward: 0.019
-  lightStepLength: 64
+  lightStepLength: 32
   lightConeRadius: 0.4
-  density: 1
+  density: 1.06
   globalMultiplier: 1
   windSpeed: 25
   windDirection: 0
@@ -563,7 +563,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 330675052}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 65f5677aa325c184f801528d78a73827, type: 3}
   m_Name: 
@@ -576,7 +576,7 @@ MonoBehaviour:
   useYCoCg: 0
   useClipping: 1
   useDilation: 1
-  useMotionBlur: 1
+  useMotionBlur: 0
   useOptimizations: 1
   feedbackMin: 0.88
   feedbackMax: 0.97
@@ -612,8 +612,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pattern: 12
   patternScale: 1
-  activeSample: {x: 0, y: 0, z: 0, w: 0}
-  activeIndex: -2
+  activeSample: {x: -0.1875, y: -0.12962961, z: 0.0625, w: -0.46296296}
+  activeIndex: 9
 --- !u!1 &607118089
 GameObject:
   m_ObjectHideFlags: 0
@@ -1166,13 +1166,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1811183544}
-  m_LocalRotation: {x: 0.17900135, y: 0.12727544, z: -0.023359407, w: 0.9753019}
+  m_LocalRotation: {x: 0.16142508, y: 0.15008067, z: -0.024845693, w: 0.97508997}
   m_LocalPosition: {x: 0, y: 30.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 20.8, y: 14.87, z: 0}
+  m_LocalEulerAnglesHint: {x: 18.8, y: 17.5, z: 0}
 --- !u!1 &2055417248
 GameObject:
   m_ObjectHideFlags: 0

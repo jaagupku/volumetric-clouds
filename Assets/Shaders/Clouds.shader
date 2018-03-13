@@ -165,7 +165,7 @@
 				return tex2Dlod(_WeatherTexture, float4((p.xz + _CoverageWindOffset) * _WeatherScale + float2(0.5, 0.5), 0, 0)).rgb;
 			}
 
-			float sampleCloudDensity(float3 p, float3 weather_data, float lod)
+			float sampleCloudDensity(float3 p, float3 weather_data, float lod, bool sampleDetail)
 			{
 				float height_fraction = getHeightFractionForPoint(p);
 
@@ -192,7 +192,7 @@
 				// TODO p.xy += distort with curl noise
 #if defined(DEBUG_NO_HIGH_FREQ_NOISE)
 #else
-				if (final_cloud > 0.0)
+				if (final_cloud > 0.0 && sampleDetail)
 				{
 					float3 curl_noise = tex2Dlod(_CurlNoise, float4(p.xz * _Scale * _CurlDistortScale, 0, 0)).rgb * 2.0 - 1.0;
 
@@ -255,13 +255,13 @@
 					float3 randomOffset = RandomUnitSphere[i] * _LightStepLength * _LightConeRadius * ((float) (i + 1));
 
 					float3 p = pos + randomOffset;
-					weather_data = sampleWeather(pos);
-					densityAlongCone += sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5);
+					weather_data = sampleWeather(p);
+					densityAlongCone += sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5, true);
 				}
 				
 				pos += 8.0 * _LightStepLength * lightDir;
 				weather_data = sampleWeather(pos);
-				densityAlongCone += sampleCloudDensity(pos, weather_data, lod) * 3.4; 
+				densityAlongCone += sampleCloudDensity(pos, weather_data, lod + 2, true) * 3.4; 
 				/*
 				pos += 5.0 * _LightStepLength * lightDir;
 				weather_data = sampleWeather(pos);
@@ -280,14 +280,14 @@
 					j++;
 				}
 				*/
-				return calculateLightEnergy(densityAlongCone, -cosAngle, 0.2, density, weather_data.b) * _SunColor;
+				return calculateLightEnergy(densityAlongCone, cosAngle, 0.2, density, weather_data.b) * _SunColor;
 			}
 
 			fixed4 raymarch(float3 ro, float3 rd, fixed4 col, float steps, float stepSize, float depth)
 			{
 				float3 pos = ro;
 				fixed4 res = fixed4(0.0, 0.0, 0.0, 0.0);
-				float cosAngle = dot(rd, -_SunDir);
+				float cosAngle = -dot(rd, -_SunDir);
 				float transmittance = 1.0;
 				float lod = 0.0;
 
@@ -308,7 +308,7 @@
 						continue;
 					}
 
-					float cloudDensity = sampleCloudDensity(pos, weather_data, lod);
+					float cloudDensity = saturate(sampleCloudDensity(pos, weather_data, lod, true));
 
 					float4 particle = float4(cloudDensity, cloudDensity, cloudDensity, cloudDensity);
 					if (cloudDensity > 0.0) {
@@ -321,7 +321,7 @@
 						transmittance *= T;
 #if defined(DEBUG_DENSITY)
 #else
-						float3 lightEnergy = sampleConeToLight(pos, _SunDir, cosAngle, cloudDensity, lod + 1.0);
+						float3 lightEnergy = sampleConeToLight(pos, _SunDir, cosAngle, cloudDensity, lod);
 						float3 ambientLight = lerp(_CloudBaseColor, _CloudTopColor, getHeightFractionForPoint(pos));
 
 						lightEnergy *= _SunLightFactor;
@@ -393,7 +393,7 @@
 
 			fixed4 frag (v2f i) : SV_Target
 			{
-				fixed4 col = tex2D(_MainTex, i.uv);
+				fixed4 col = tex2D(_MainTex, i.uv); //0.0;//
 				// ray origin (camera position)
 				float3 ro = _CameraWS;
 				// ray direction
@@ -459,7 +459,7 @@
 				// ray (see vert()).  Think of similar triangles: the view-space z-distance between a point
 				// and the camera is proportional to the absolute distance.
 				float depth = Linear01Depth(tex2D(_CameraDepthTexture, duv).r);
-				if (depth > 0.999) {
+				if (depth == 1.0) {
 					depth = 100.0;
 				}
 				depth *= _FarPlane;
@@ -470,7 +470,6 @@
 
 				//fixed a = tex3Dlod(_ShapeTexture, float4(rs * _Scale * 2.0, 0)).r;
 				//return fixed4(a, a, a, 1.0);
-
 				return raymarch(rs, rd, col, steps, stepSize, depth);
 			}
 			ENDCG
