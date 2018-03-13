@@ -50,6 +50,8 @@
 			uniform sampler3D _ErasionTexture;
 			uniform sampler2D _WeatherTexture;
 			uniform sampler2D _CurlNoise;
+			uniform sampler2D _BlueNoise;
+			uniform float4 _Randomness;
 
 			uniform float3 _SunDir;
 			uniform float3 _PlanetCenter;
@@ -59,8 +61,10 @@
 			uniform float3 _CloudTopColor;
 
 			uniform float _SphereSize;
-			uniform float _StartHeight;
+			//uniform float _StartHeight;
+			uniform float2 _CloudHeightMinMax;
 			uniform float _Thickness;
+
 			uniform float _Coverage;
 			uniform float _AmbientLightFactor;
 			uniform float _SunLightFactor;
@@ -68,6 +72,7 @@
 			uniform float _HenyeyGreensteinGBackward;
 			uniform float _InverseStep;
 			uniform float _LightStepLength;
+			uniform float _LightConeRadius;
 
 			uniform float _Density;
 			
@@ -83,9 +88,11 @@
 			uniform float _CurlDistortAmount;
 
 			uniform float _WindSpeed;
-			uniform float2 _WindDirection;
-			uniform float2 _WindOffset;
+			uniform float3 _WindDirection;
+			uniform float3 _WindOffset;
+			uniform float2 _CoverageWindOffset;
 
+			uniform float2 _LowFreqMinMax;
 			uniform float _HighFreqModifier;
 
 			uniform int _Steps;
@@ -135,16 +142,16 @@
 				return new_min + (((original_value - original_min) / (original_max - original_min)) * (new_max - new_min));
 			}
 
-			float getHeightFractionForPoint(float3 inPosition, float2 inCloudMinMax)
+			float getHeightFractionForPoint(float3 inPosition)
 			{
-				//float height_fraction = (inPosition.y - inCloudMinMax.x) / (inCloudMinMax.y - inCloudMinMax.x);
-				return saturate((distance(inPosition,  _PlanetCenter) - (_SphereSize + inCloudMinMax.x)) / (inCloudMinMax.y - inCloudMinMax.x));
+				//return (inPosition.y - _CloudHeightMinMax.x) / (_CloudHeightMinMax.y - _CloudHeightMinMax.x);
+				return saturate((distance(inPosition,  _PlanetCenter) - (_SphereSize + _CloudHeightMinMax.x)) / _Thickness);
 			}
 
 			float getDensityHeightGradientForPoint(float3 p, float3 weather_data)
 			{
-				//return densityHeightGradient(getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness)), weather_data.g);
-				float height = getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness));
+				//return densityHeightGradient(getHeightFractionForPoint(p), weather_data.g);
+				float height = getHeightFractionForPoint(p);
 				return (remap(height, _TestGradient.x, _TestGradient.y, 0.0, 1.0) * remap(height, _TestGradient.z, _TestGradient.w, 1.0, 0.0));
 			}
 
@@ -153,11 +160,15 @@
 				return smoothstep(gradient.x, gradient.y, height) - smoothstep(gradient.z, gradient.w, height);
 			}
 
+			float3 sampleWeather(float3 p) {
+				return tex2Dlod(_WeatherTexture, float4((p.xz + _CoverageWindOffset) * _WeatherScale + float2(0.5, 0.5), 0, 0)).rgb;
+			}
+
 			float sampleCloudDensity(float3 p, float3 weather_data, float lod)
 			{
-				float height_fraction = getHeightFractionForPoint(p, float2(_StartHeight, _StartHeight + _Thickness));
+				float height_fraction = getHeightFractionForPoint(p);
 
-				float3 pos = p + float3(_WindOffset.x, 0.0, _WindOffset.y);
+				float3 pos = p + _WindOffset;
 				float height_wind_speed = _WindSpeed * height_fraction * 10.0;
 				//pos += float3(_WindDirection.x * height_wind_speed, 0.0, _WindDirection.y * height_wind_speed);
 #if defined(DEBUG_NO_LOW_FREQ_NOISE)
@@ -166,8 +177,7 @@
 				float4 low_frequency_noises = tex3Dlod(_ShapeTexture, float4(pos * _Scale, lod));
 				//float low_freq_FBM = low_frequency_noises.g * 0.625 +low_frequency_noises.b * 0.25 + low_frequency_noises.a * 0.125;
 				float base_cloud = max(0.0, low_frequency_noises.r) * pow(1.15 - height_fraction, 0.7);//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);//
-				base_cloud = remap(base_cloud, _TestFloat, _TestFloat2, 0.0, 1.0);
-				
+				base_cloud = remap(base_cloud, _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0);
 #endif
 				//float density_height_gradient = getDensityHeightGradientForPoint(p, weather_data);
 				base_cloud *= improvedGradient(_TestGradient, height_fraction);//density_height_gradient;//
@@ -181,25 +191,29 @@
 				// TODO p.xy += distort with curl noise
 #if defined(DEBUG_NO_HIGH_FREQ_NOISE)
 #else
-				float3 curl_noise = tex2Dlod(_CurlNoise, float4(p.xy * _Scale * _CurlDistortScale, 0, 0)).rgb * 2.0 - 1.0;
+				if (final_cloud > 0.0)
+				{
+					float3 curl_noise = tex2Dlod(_CurlNoise, float4(p.xz * _Scale * _CurlDistortScale, 0, 0)).rgb * 2.0 - 1.0;
 
-				pos += curl_noise * height_fraction * _CurlDistortAmount;
+					pos += curl_noise * height_fraction * _CurlDistortAmount;
 
-				float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(pos * _Scale * _ErasionScale, lod)).rgb;
-				float high_freq_FBM = 1.0 - high_frequency_noises.r;//high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
+					float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(pos * _Scale * _ErasionScale, lod)).rgb;
+					float high_freq_FBM = 1.0 - high_frequency_noises.r;//high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
 
-				float high_freq_noise_modifier = lerp(high_freq_FBM, 1.0 - high_freq_FBM, saturate(height_fraction * 10.0));
+					float high_freq_noise_modifier = lerp(high_freq_FBM, 1.0 - high_freq_FBM, saturate(height_fraction * 10.0));
 
-				final_cloud = remap(final_cloud, high_freq_noise_modifier * _HighFreqModifier, 1.0, 0.0, 1.0);
+					final_cloud = remap(final_cloud, high_freq_noise_modifier * _HighFreqModifier, 1.0, 0.0, 1.0);
+				}
 #endif
 				
-				return saturate(final_cloud *_InverseStep);
+				return saturate(final_cloud *_InverseStep); // saturate
 			}
 
 			// GPU Pro 7
 			float beerLaw(float density, float weather)
 			{
-				return exp(-density * _Density * weather);
+				float d = -density * _Density * weather;
+				return exp(d);//max(exp(d), exp(d * 0.25)*0.7);//
 			}
 
 			// GPU Pro 7
@@ -216,19 +230,55 @@
 			}
 
 			float calculateLightEnergy(float density, float cosAngle, float g, float powderDensity, float weather) {
-				return saturate(2.0 * beerLaw(density, 1.0 + weather) * powderEffect(powderDensity) * 
-					(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward) + HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * 0.5);
+				return 2.0 * beerLaw(density, 1.0 + weather) * powderEffect(powderDensity) * 
+					max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward));
 			}
 
-			float3 sampleConeToLight(float3 pos, float3 lightDir, float3 weather_data, float cosAngle, float density, float lod)
+			float3 sampleConeToLight(float3 pos, float3 lightDir, float cosAngle, float density, float lod)
 			{
-				float densityAlongCone = 0.0; // TODO make it cone
-				float steps = 6.0;
+				const float3 RandomUnitSphere[5] =
+				{
+					{ -0.6, -0.8, -0.2 },
+					{ 1.0, -0.3, 0.0 },
+					{ -0.7, 0.0, 0.7 },
+					{ -0.2, 0.6, -0.8 },
+					{ 0.4, 0.3, 0.9 }
+				};
+
+				float densityAlongCone = 0.0;
+				const int steps = 5;
+				float3 weather_data;
 				for (int i = 0; i < steps; i++) {
 					pos += lightDir * _LightStepLength;
-					densityAlongCone += sampleCloudDensity(pos, weather_data, lod);
+
+					float3 randomOffset = RandomUnitSphere[i] * _LightStepLength * _LightConeRadius * ((float) (i + 1));
+
+					float3 p = pos + randomOffset;
+					weather_data = sampleWeather(pos);
+					densityAlongCone += sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5);
 				}
-				densityAlongCone += sampleCloudDensity(pos + 6.0 * _LightStepLength * lightDir, weather_data, lod) * 2.0;
+				
+				pos += 8.0 * _LightStepLength * lightDir;
+				weather_data = sampleWeather(pos);
+				densityAlongCone += sampleCloudDensity(pos, weather_data, lod) * 3.4; 
+				/*
+				pos += 5.0 * _LightStepLength * lightDir;
+				weather_data = sampleWeather(pos);
+				densityAlongCone += sampleCloudDensity(pos, weather_data, lod) * 3.0;
+				int j = 0;
+				while (1) {
+					if (j > 22) {
+						break;
+					}
+					pos += 4.0 * _LightStepLength * lightDir;
+					weather_data = sampleWeather(pos);
+					if (weather_data.r - _Coverage > 0.05) {
+						densityAlongCone += sampleCloudDensity(pos, weather_data, lod);
+					}
+
+					j++;
+				}
+				*/
 				return calculateLightEnergy(densityAlongCone, -cosAngle, 0.2, density, weather_data.b) * _SunColor;
 			}
 
@@ -250,11 +300,10 @@
 						break;
 					}
 #endif
-					float3 weather_data = tex2Dlod(_WeatherTexture, float4(pos.xz * _WeatherScale + float2(0.5, 0.5), 0, 0)).rgb;
-					if (saturate(weather_data.r - _Coverage) < 0.01)
+					float3 weather_data = sampleWeather(pos);
+					if (weather_data.r - _Coverage < 0.01)
 					{
-						pos += 2.0 * stepSize * rd;
-						i++;
+						pos += stepSize * rd;
 						continue;
 					}
 
@@ -271,8 +320,8 @@
 						transmittance *= T;
 #if defined(DEBUG_DENSITY)
 #else
-						float3 lightEnergy = sampleConeToLight(pos, _SunDir, weather_data, cosAngle, cloudDensity, lod + 1.0);
-						float3 ambientLight = lerp(_CloudBaseColor, _CloudTopColor, getHeightFractionForPoint(pos, float2(_StartHeight, _StartHeight + _Thickness)));
+						float3 lightEnergy = sampleConeToLight(pos, _SunDir, cosAngle, cloudDensity, lod + 1.0);
+						float3 ambientLight = lerp(_CloudBaseColor, _CloudTopColor, getHeightFractionForPoint(pos));
 
 						lightEnergy *= _SunLightFactor;
 						ambientLight *= _AmbientLightFactor;
@@ -334,6 +383,13 @@
 				return rayOrigin;
 			}
 
+			float getRandomRayOffset(float2 uv, float stepSize)
+			{
+				float noise = tex2D(_BlueNoise, uv).x;
+				noise = mad(noise, 2.0, -1.0);
+				return noise * stepSize;
+			}
+
 			fixed4 frag (v2f i) : SV_Target
 			{
 				fixed4 col = tex2D(_MainTex, i.uv);
@@ -354,9 +410,9 @@
 				// Ray start pos
 
 #if defined(ALLOW_IN_CLOUDS)
-				if (distance(_CameraWS, _PlanetCenter) < _SphereSize + _StartHeight)
+				if (distance(_CameraWS, _PlanetCenter) < _SphereSize + _CloudHeightMinMax.x)
 				{
-					rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _StartHeight);
+					rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.x);
 					if (rs.y < 0.0) // If ray starting position is below horizon
 					{
 						return col;
@@ -366,14 +422,14 @@
 				{
 					rs = ro;
 				}
-				re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _StartHeight + _Thickness);
+				re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
 #else
-				rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _StartHeight);
+				rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.x);
 				if (rs.y < 0.0) // If ray starting position is below horizon
 				{
 					return col;
 				}
-				re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _StartHeight + _Thickness);
+				re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
 #endif
 				// TEXTURE TESTING
 				//float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(rs * 7.0 * _Scale * _ErasionScale, 0)).rgb;
@@ -391,8 +447,13 @@
 				float steps = _Steps;
 				float stepSize = _Thickness / steps;
 				steps = steps * (distance(re, rs)) / _Thickness;
+				//return fixed4(steps, steps, steps, 1.0);
 
-				rs += rd * stepSize * rand(_Time.zw + duv);
+				//rs += rd * stepSize * rand(_Time.zw + duv);
+				rs += rd * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy / 512.0, stepSize);
+
+				//float2 ruv = (duv + _Randomness.xy) * _ScreenParams.xy / 512.0;
+				//return tex2D(_BlueNoise, ruv);
 
 				// Convert from depth buffer (eye space) to true distance from camera
 				// This is done by multiplying the eyespace depth by the length of the "z-normalized"

@@ -13,16 +13,6 @@ public class CloudsScript : SceneViewFilter
     public Gradient testGradient;
     private Vector4 _testGradient;
 
-    [HeaderAttribute("Step Testing")]
-    public AnimationCurve stepTestCurve;
-    public bool test = true;
-    [Range(0.1f, 1.0f)]
-    public float power = 0.125f;
-    [Range(0.0f, 4.0f)]
-    public float stepMultiplier = 2.0f;
-    [Range(0.0f, 8.0f)]
-    public float testMultiplier = 2.0f;
-
     [HeaderAttribute("Debugging")]
     public bool debugNoLowFreqNoise = false;
     public bool debugNoHighFreqNoise = false;
@@ -31,7 +21,10 @@ public class CloudsScript : SceneViewFilter
     [HeaderAttribute("Performance")]
     [Range(1, 256)]
     public int steps = 128;
+    public bool adjustDensity = true;
+    public AnimationCurve stepDensityAdjustmentCurve = new AnimationCurve(new Keyframe(0.0f, 3.019f), new Keyframe(0.25f, 1.233f), new Keyframe(0.5f, 1.0f), new Keyframe(1.0f, 0.892f));
     public bool allowFlyingInClouds = false;
+    public Texture2D blueNoiseTexture;
 
     [HeaderAttribute("Cloud modeling")]
     public Shader cloudShader;
@@ -45,6 +38,10 @@ public class CloudsScript : SceneViewFilter
     public float scale = 0.128f;
     [Range(0.0f, 32.0f)]
     public float erasionScale = 18.7f;
+    [Range(0.0f, 1.0f)]
+    public float lowFreqMin = 0.366f;
+    [Range(0.0f, 1.0f)]
+    public float lowFreqMax = 0.8f;
     [Range(0.0f, 1.0f)]
     public float highFreqModifier = 0.21f;
     [Range(0.0f, 10.0f)]
@@ -72,14 +69,20 @@ public class CloudsScript : SceneViewFilter
     public float henyeyGreensteinGBackward = 0.179f;
     [Range(0.0f, 200.0f)]
     public float lightStepLength = 64.0f;
+    [Range(0.0f, 1.0f)]
+    public float lightConeRadius = 0.4f;
     [Range(0.0f, 4.0f)]
     public float density = 1.0f;
 
     [HeaderAttribute("Animating")]
-    public float windSpeed = 2.57f;
+    public float globalMultiplier = 1.0f;
+    public float windSpeed = 25.7f;
     public float windDirection = 0.0f;
-    private Vector2 windOffset = new Vector2(0.0f, 0.0f);
-    private Vector2 windDirectionVector;
+    public float coverageWindSpeed = 0.0f;
+    public float coverageWindDirection = 0.0f;
+    private Vector3 windOffset = new Vector3(0.0f, 0.0f, 0.0f);
+    private Vector2 coverageWindOffset = new Vector3(0.0f, 0.0f);
+    private Vector3 windDirectionVector;
     private float multipliedWindSpeed;
 
     private Texture3D cloudShapeTexture;
@@ -165,7 +168,7 @@ public class CloudsScript : SceneViewFilter
     [ImageEffectOpaque]
     void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        if (!EffectMaterial == null || weatherTexture == null || curlNoise == null)
+        if (!EffectMaterial == null || weatherTexture == null || curlNoise == null || blueNoiseTexture == null)
         {
             Graphics.Blit(source, destination); // do nothing
             return;
@@ -224,16 +227,21 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetTexture("_ErasionTexture", cloudErasionTexture);
         EffectMaterial.SetTexture("_WeatherTexture", weatherTexture);
         EffectMaterial.SetTexture("_CurlNoise", curlNoise);
-        
-        EffectMaterial.SetFloat("_CurlDistortAmount", curlDistortAmount);
-        EffectMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
+        EffectMaterial.SetTexture("_BlueNoise", blueNoiseTexture);
+        EffectMaterial.SetVector("_Randomness", new Vector4(Random.value, Random.value, Random.value, Random.value));
 
+        EffectMaterial.SetFloat("_CurlDistortAmount", curlDistortAmount);
+        EffectMaterial.SetFloat("_CurlDistortScale", curlDistortScale); 
+
+            
+        EffectMaterial.SetFloat("_LightConeRadius", lightConeRadius);
         EffectMaterial.SetFloat("_LightStepLength", lightStepLength);
         EffectMaterial.SetFloat("_SphereSize", planetSize);
-        EffectMaterial.SetFloat("_StartHeight", startHeight);
+        EffectMaterial.SetVector("_CloudHeightMinMax", new Vector2(startHeight, startHeight + thickness));
         EffectMaterial.SetFloat("_Thickness", thickness);
         EffectMaterial.SetFloat("_Scale", 0.0001f + scale * 0.001f);
-        EffectMaterial.SetFloat("_ErasionScale", erasionScale); 
+        EffectMaterial.SetFloat("_ErasionScale", erasionScale);
+        EffectMaterial.SetVector("_LowFreqMinMax", new Vector4(lowFreqMin, lowFreqMax));
         EffectMaterial.SetFloat("_HighFreqModifier", highFreqModifier);
         EffectMaterial.SetFloat("_WeatherScale", weatheScale * 0.001f);
         EffectMaterial.SetFloat("_Coverage", 1 - coverage);
@@ -245,6 +253,7 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_WindSpeed", multipliedWindSpeed);
         EffectMaterial.SetVector("_WindDirection", windDirectionVector);
         EffectMaterial.SetVector("_WindOffset", windOffset);
+        EffectMaterial.SetVector("_CoverageWindOffset", coverageWindOffset);
 
         // Test uniforms
         EffectMaterial.SetFloat("_TestFloat", testFloat);
@@ -252,9 +261,9 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetVector("_TestGradient", gradientToVector4(testGradient));
 
         EffectMaterial.SetInt("_Steps", steps);
-        if (test)
+        if (adjustDensity)
         {
-            EffectMaterial.SetFloat("_InverseStep", stepTestCurve.Evaluate(steps / 256.0f));
+            EffectMaterial.SetFloat("_InverseStep", stepDensityAdjustmentCurve.Evaluate(steps / 256.0f));
         }
         else
         {
@@ -268,14 +277,17 @@ public class CloudsScript : SceneViewFilter
 
         CustomGraphicsBlit(source, destination, EffectMaterial, 0);
     }
-
     private void Update()
     {
         //steps = 6 + ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 250f));
-        multipliedWindSpeed = windSpeed * 10.0f;
-        float angle = windDirection * Mathf.Deg2Rad;
-        windDirectionVector = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+        multipliedWindSpeed = windSpeed * globalMultiplier;
+        float angleWind = windDirection * Mathf.Deg2Rad;
+        windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.01f, Mathf.Sin(angleWind));
         windOffset += multipliedWindSpeed * windDirectionVector * Time.deltaTime;
+
+        float angleCoverage = coverageWindDirection * Mathf.Deg2Rad;
+        Vector2 coverageDirecton = new Vector2(Mathf.Cos(angleCoverage), Mathf.Sin(angleCoverage));
+        coverageWindOffset += coverageWindSpeed * globalMultiplier * coverageDirecton;
     }
 
     private void updateMaterialKeyword(bool b, string keyword)
