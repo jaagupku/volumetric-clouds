@@ -490,7 +490,10 @@ MonoBehaviour:
   debugNoLowFreqNoise: 0
   debugNoHighFreqNoise: 0
   debugDensityOnly: 0
-  steps: 32
+  cloudShader: {fileID: 4800000, guid: da806f8e56a69844993c619778a0db21, type: 3}
+  postProcessCloudsShader: {fileID: 4800000, guid: 242d9353195480c4f955926382904571,
+    type: 3}
+  steps: 128
   adjustDensity: 1
   stepDensityAdjustmentCurve:
     serializedVersion: 2
@@ -524,7 +527,6 @@ MonoBehaviour:
     m_RotationOrder: 0
   allowFlyingInClouds: 1
   blueNoiseTexture: {fileID: 2800000, guid: d25158ef7a361f6409bbeb2b86bb2118, type: 3}
-  cloudShader: {fileID: 4800000, guid: da806f8e56a69844993c619778a0db21, type: 3}
   weatherTexture: {fileID: 2800000, guid: 7b0c0dac351aa97448b755e65b3db531, type: 3}
   curlNoise: {fileID: 2800000, guid: 1da5997523109fa4bad6ecd76ad147bc, type: 3}
   startHeight: 1500
@@ -540,11 +542,12 @@ MonoBehaviour:
   curlDistortAmount: 302
   weatheScale: 0.1
   coverage: 0.905
+  cloudSampleMultiplier: 1
   sunLight: {fileID: 1811183545}
   cloudBaseColor: {r: 0.7794118, g: 0.8646881, b: 1, a: 0}
   cloudTopColor: {r: 1, g: 1, b: 1, a: 0}
   ambientLightFactor: 0.52
-  sunLightFactor: 0.813
+  sunLightFactor: 0.889
   highSunColor: {r: 1, g: 0.9882353, b: 0.8235294, a: 1}
   lowSunColor: {r: 1, g: 0.6827587, b: 0, a: 1}
   henyeyGreensteinGForward: 0.204
@@ -612,8 +615,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pattern: 12
   patternScale: 1
-  activeSample: {x: -0.1875, y: -0.12962961, z: 0.0625, w: -0.46296296}
-  activeIndex: 9
+  activeSample: {x: 0, y: 0, z: 0, w: 0}
+  activeIndex: -2
 --- !u!1 &607118089
 GameObject:
   m_ObjectHideFlags: 0

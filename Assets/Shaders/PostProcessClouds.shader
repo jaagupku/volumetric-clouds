@@ -1,4 +1,4 @@
-﻿Shader "Unlit/PostProcessClouds"
+﻿Shader "Hidden/PostProcessClouds"
 {
 	Properties
 	{
@@ -6,16 +6,13 @@
 	}
 	SubShader
 	{
-		Tags { "RenderType"="Opaque" }
-		LOD 100
-
+		Cull Off ZWrite Off ZTest Off
 		Pass
 		{
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-			// make fog work
-			#pragma multi_compile_fog
+			#pragma target 5.0
 			
 			#include "UnityCG.cginc"
 

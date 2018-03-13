@@ -55,6 +55,8 @@ public class CloudsScript : SceneViewFilter
     public float weatheScale = 0.1f;
     [Range(0.0f, 2.0f)]
     public float coverage = 0.92f;
+    [Range(0.0f, 2.0f)]
+    public float cloudSampleMultiplier = 1.0f;
 
     [HeaderAttribute("Cloud Lighting")]
     public Light sunLight;
@@ -113,7 +115,7 @@ public class CloudsScript : SceneViewFilter
         {
             if (!_UpscaleMaterial && postProcessCloudsShader)
             {
-                _UpscaleMaterial = new Material(cloudShader);
+                _UpscaleMaterial = new Material(postProcessCloudsShader);
                 _UpscaleMaterial.hideFlags = HideFlags.HideAndDontSave;
             }
 
@@ -183,7 +185,7 @@ public class CloudsScript : SceneViewFilter
     {
         if (_cloudRenderTexture == null)
         {
-            _cloudRenderTexture = new RenderTexture(230, 120, 0, CurrentCamera.allowHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, RenderTextureReadWrite.Default);
+            _cloudRenderTexture = new RenderTexture(Screen.width, Screen.height, 0, CurrentCamera.allowHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, RenderTextureReadWrite.Default);
             _cloudRenderTexture.filterMode = FilterMode.Bilinear;
             _cloudRenderTexture.hideFlags = HideFlags.HideAndDontSave;
         }
@@ -290,6 +292,7 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_Coverage", 1 - coverage);
         EffectMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
         EffectMaterial.SetFloat("_HenyeyGreensteinGBackward", -henyeyGreensteinGBackwardLerp);
+        EffectMaterial.SetFloat("_SampleMultiplier", cloudSampleMultiplier);
 
         EffectMaterial.SetFloat("_Density", density);
 
@@ -312,13 +315,15 @@ public class CloudsScript : SceneViewFilter
         {
             EffectMaterial.SetFloat("_InverseStep", 1.0f);
         }
-
+        
         EffectMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
         EffectMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
         EffectMaterial.SetVector("_CameraWS", cameraPos);
         EffectMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
         CustomGraphicsBlit(source, destination, EffectMaterial, 0);
+        //CustomGraphicsBlit(source, _cloudRenderTexture, EffectMaterial, 0);
+        //Graphics.Blit(_cloudRenderTexture, destination, UpscaleMaterial);
     }
     private void Update()
     {
@@ -389,15 +394,15 @@ public class CloudsScript : SceneViewFilter
     /// 
     /// \warning You may need to account for flipped UVs on DirectX machines due to differing UV semantics
     ///          between OpenGL and DirectX.  Use the shader define UNITY_UV_STARTS_AT_TOP to account for this.
-    void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNr)
+    static void CustomGraphicsBlit(RenderTexture source, RenderTexture dest, Material fxMaterial, int passNr)
     {
         RenderTexture.active = dest;
 
         fxMaterial.SetTexture("_MainTex", source);
-
+        
         GL.PushMatrix();
         GL.LoadOrtho(); // Note: z value of vertices don't make a difference because we are using ortho projection
-
+        
         fxMaterial.SetPass(passNr);
 
         GL.Begin(GL.QUADS);

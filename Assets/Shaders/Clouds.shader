@@ -53,6 +53,7 @@
 			uniform sampler2D _BlueNoise;
 			uniform float4 _BlueNoise_TexelSize;
 			uniform float4 _Randomness;
+			uniform float _SampleMultiplier;
 
 			uniform float3 _SunDir;
 			uniform float3 _PlanetCenter;
@@ -207,7 +208,7 @@
 				}
 #endif
 				
-				return saturate(final_cloud *_InverseStep); // saturate
+				return saturate(final_cloud *_InverseStep * _SampleMultiplier); // saturate
 			}
 
 			// GPU Pro 7
@@ -265,7 +266,7 @@
 				/*
 				pos += 5.0 * _LightStepLength * lightDir;
 				weather_data = sampleWeather(pos);
-				densityAlongCone += sampleCloudDensity(pos, weather_data, lod) * 3.0;
+				densityAlongCone += sampleCloudDensity(pos, weather_data, lod, true) * 3.0;
 				int j = 0;
 				while (1) {
 					if (j > 22) {
@@ -274,7 +275,7 @@
 					pos += 4.0 * _LightStepLength * lightDir;
 					weather_data = sampleWeather(pos);
 					if (weather_data.r - _Coverage > 0.05) {
-						densityAlongCone += sampleCloudDensity(pos, weather_data, lod);
+						densityAlongCone += sampleCloudDensity(pos, weather_data, lod, true);
 					}
 
 					j++;
