@@ -53,9 +53,8 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
 				fixed4 back = tex2D(_MainTex, i.uv);
-				return back;
 				fixed4 cloud = tex2D(_Clouds, i.uv);
-				return fixed4(back.xyz + cloud.xyz, 1.0);
+				return fixed4(back.rgb * (1.0 - cloud.a) + cloud.rgb, 1.0);
 			}
 			ENDCG
 		}

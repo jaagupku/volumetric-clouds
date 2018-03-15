@@ -162,7 +162,7 @@ public class CloudsScript : SceneViewFilter
             Gizmos.DrawLine(pos, pos + (Vector3)(corners.GetRow(x)));
         }
 
-        /*
+        
         // UNCOMMENT TO DEBUG RAY DIRECTIONS
         Gizmos.color = Color.red;
         int n = 10; // # of intervals
@@ -178,14 +178,14 @@ public class CloudsScript : SceneViewFilter
                 Gizmos.DrawLine(pos + (Vector3)w, pos + (Vector3)w * 1.2f);
             }
         }
-        */   
+        
     }
 
     private void createRenderTexture()
     {
         if (_cloudRenderTexture == null)
         {
-            _cloudRenderTexture = new RenderTexture(Screen.width, Screen.height, 0, CurrentCamera.allowHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, RenderTextureReadWrite.Default);
+            _cloudRenderTexture = new RenderTexture((int)(Screen.width * 0.5f), (int)(Screen.height * 0.5f), 0, CurrentCamera.allowHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, RenderTextureReadWrite.Default);
             _cloudRenderTexture.filterMode = FilterMode.Bilinear;
             _cloudRenderTexture.hideFlags = HideFlags.HideAndDontSave;
         }
@@ -321,9 +321,12 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetVector("_CameraWS", cameraPos);
         EffectMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
-        CustomGraphicsBlit(source, destination, EffectMaterial, 0);
-        //CustomGraphicsBlit(source, _cloudRenderTexture, EffectMaterial, 0);
-        //Graphics.Blit(_cloudRenderTexture, destination, UpscaleMaterial);
+        
+        CustomGraphicsBlit(source, _cloudRenderTexture, EffectMaterial, 0);
+        
+        UpscaleMaterial.SetTexture("_Clouds", _cloudRenderTexture);
+
+        Graphics.Blit(source, destination, UpscaleMaterial, 0);
     }
     private void Update()
     {
@@ -398,7 +401,7 @@ public class CloudsScript : SceneViewFilter
     {
         RenderTexture.active = dest;
 
-        fxMaterial.SetTexture("_MainTex", source);
+        //fxMaterial.SetTexture("_MainTex", source);
         
         GL.PushMatrix();
         GL.LoadOrtho(); // Note: z value of vertices don't make a difference because we are using ortho projection

@@ -339,9 +339,9 @@
 					pos += stepSize * rd;
 				}
 
-				fixed3 color = col.rgb * (1.0 - res.a) + res.rgb;
+				//fixed3 color = col.rgb * (1.0 - res.a) + res.rgb;
 
-				return fixed4(color, 1.0);
+				return res;//fixed4(color, 1.0);
 			}
 
 			// https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
@@ -394,7 +394,7 @@
 
 			fixed4 frag (v2f i) : SV_Target
 			{
-				fixed4 col = tex2D(_MainTex, i.uv); //0.0;//
+				fixed4 col = 0.0;//tex2D(_MainTex, i.uv); //
 				// ray origin (camera position)
 				float3 ro = _CameraWS;
 				// ray direction
