@@ -18,10 +18,6 @@ public class CloudsScript : SceneViewFilter
     public bool debugNoHighFreqNoise = false;
     public bool debugDensityOnly = false;
 
-    [HeaderAttribute("System")]
-    public Shader cloudShader;
-    public Shader postProcessCloudsShader;
-
     [HeaderAttribute("Performance")]
     [Range(1, 256)]
     public int steps = 128;
@@ -29,6 +25,8 @@ public class CloudsScript : SceneViewFilter
     public AnimationCurve stepDensityAdjustmentCurve = new AnimationCurve(new Keyframe(0.0f, 3.019f), new Keyframe(0.25f, 1.233f), new Keyframe(0.5f, 1.0f), new Keyframe(1.0f, 0.892f));
     public bool allowFlyingInClouds = false;
     public Texture2D blueNoiseTexture;
+    [Range(1, 8)]
+    public int downSample = 1;
 
     [HeaderAttribute("Cloud modeling")]
     public Texture2D weatherTexture;
@@ -98,9 +96,9 @@ public class CloudsScript : SceneViewFilter
     {
         get
         {
-            if (!_EffectMaterial && cloudShader)
+            if (!_EffectMaterial)
             {
-                _EffectMaterial = new Material(cloudShader);
+                _EffectMaterial = new Material(Shader.Find("Hidden/Clouds"));
                 _EffectMaterial.hideFlags = HideFlags.HideAndDontSave;
             }
 
@@ -113,9 +111,9 @@ public class CloudsScript : SceneViewFilter
     {
         get
         {
-            if (!_UpscaleMaterial && postProcessCloudsShader)
+            if (!_UpscaleMaterial)
             {
-                _UpscaleMaterial = new Material(postProcessCloudsShader);
+                _UpscaleMaterial = new Material(Shader.Find("Hidden/CloudBlender"));
                 _UpscaleMaterial.hideFlags = HideFlags.HideAndDontSave;
             }
 
@@ -128,7 +126,10 @@ public class CloudsScript : SceneViewFilter
     {
         if (_EffectMaterial)
             DestroyImmediate(_EffectMaterial);
+        if (_UpscaleMaterial)
+            DestroyImmediate(_UpscaleMaterial);
         createRenderTexture();
+        QualitySettings.vSyncCount = 1;
     }
 
     private void OnDestroy()
@@ -181,7 +182,7 @@ public class CloudsScript : SceneViewFilter
         
     }
 
-    private void createRenderTexture()
+    private void createRenderTexture() // atm doing with temporary render textures, not needed maybe.
     {
         if (_cloudRenderTexture == null)
         {
@@ -262,11 +263,14 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
         EffectMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
         EffectMaterial.SetColor("_SunColor", sunColor);
+        //EffectMaterial.SetColor("_SunColor", sunLight.color);
 
         EffectMaterial.SetColor("_CloudBaseColor", cloudBaseColor);
         EffectMaterial.SetColor("_CloudTopColor", cloudTopColor);
         EffectMaterial.SetFloat("_AmbientLightFactor", ambientLightFactorUpdated);
         EffectMaterial.SetFloat("_SunLightFactor", sunLightFactorUpdated);
+        //EffectMaterial.SetFloat("_AmbientLightFactor", sunLight.intensity * ambientLightFactor * 0.3f);
+        //EffectMaterial.SetFloat("_SunLightFactor", sunLight.intensity * sunLightFactor);
 
         EffectMaterial.SetTexture("_ShapeTexture", _cloudShapeTexture);
         EffectMaterial.SetTexture("_ErasionTexture", _cloudErasionTexture);
@@ -276,8 +280,7 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetVector("_Randomness", new Vector4(Random.value, Random.value, Random.value, Random.value));
 
         EffectMaterial.SetFloat("_CurlDistortAmount", curlDistortAmount);
-        EffectMaterial.SetFloat("_CurlDistortScale", curlDistortScale); 
-
+        EffectMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
             
         EffectMaterial.SetFloat("_LightConeRadius", lightConeRadius);
         EffectMaterial.SetFloat("_LightStepLength", lightStepLength);
@@ -321,19 +324,21 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetVector("_CameraWS", cameraPos);
         EffectMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
+        RenderTexture rt = RenderTexture.GetTemporary((int)(source.width / ((float) downSample)), (int)(source.height / ((float)downSample)), 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default, source.antiAliasing);
+        CustomGraphicsBlit(source, rt, EffectMaterial, 0);
         
-        CustomGraphicsBlit(source, _cloudRenderTexture, EffectMaterial, 0);
         
-        UpscaleMaterial.SetTexture("_Clouds", _cloudRenderTexture);
+        UpscaleMaterial.SetTexture("_Clouds", rt);
 
         Graphics.Blit(source, destination, UpscaleMaterial, 0);
+        RenderTexture.ReleaseTemporary(rt);
     }
     private void Update()
     {
         //steps = 6 + ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 250f));
         _multipliedWindSpeed = windSpeed * globalMultiplier;
         float angleWind = windDirection * Mathf.Deg2Rad;
-        _windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.01f, Mathf.Sin(angleWind));
+        _windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.1f, Mathf.Sin(angleWind));
         _windOffset += _multipliedWindSpeed * _windDirectionVector * Time.deltaTime;
 
         float angleCoverage = coverageWindDirection * Mathf.Deg2Rad;
@@ -343,13 +348,16 @@ public class CloudsScript : SceneViewFilter
 
     private void updateMaterialKeyword(bool b, string keyword)
     {
-        if (b)
+        if (b != EffectMaterial.IsKeywordEnabled(keyword))
         {
-            EffectMaterial.EnableKeyword(keyword);
-        }
-        else
-        {
-            EffectMaterial.DisableKeyword(keyword);
+            if (b)
+            {
+                EffectMaterial.EnableKeyword(keyword);
+            }
+            else
+            {
+                EffectMaterial.DisableKeyword(keyword);
+            }
         }
     }
 

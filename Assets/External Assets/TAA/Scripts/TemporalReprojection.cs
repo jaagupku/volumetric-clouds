@@ -87,9 +87,9 @@ public class TemporalReprojection : EffectBase
         int bufferW = source.width;
         int bufferH = source.height;
 
-        if (EnsureRenderTarget(ref reprojectionBuffer[eyeIndex, 0], bufferW, bufferH, RenderTextureFormat.ARGB32, FilterMode.Bilinear, antiAliasing: source.antiAliasing))
+        if (EnsureRenderTarget(ref reprojectionBuffer[eyeIndex, 0], bufferW, bufferH, RenderTextureFormat.DefaultHDR, FilterMode.Bilinear, antiAliasing: source.antiAliasing))
             Clear();
-        if (EnsureRenderTarget(ref reprojectionBuffer[eyeIndex, 1], bufferW, bufferH, RenderTextureFormat.ARGB32, FilterMode.Bilinear, antiAliasing: source.antiAliasing))
+        if (EnsureRenderTarget(ref reprojectionBuffer[eyeIndex, 1], bufferW, bufferH, RenderTextureFormat.DefaultHDR, FilterMode.Bilinear, antiAliasing: source.antiAliasing))
             Clear();
 
 #if SUPPORT_STEREO
@@ -167,7 +167,7 @@ public class TemporalReprojection : EffectBase
         }
         else
         {
-            RenderTexture internalDestination = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default, source.antiAliasing);
+            RenderTexture internalDestination = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Default, source.antiAliasing);
             {
                 Resolve(source, internalDestination);
                 Graphics.Blit(internalDestination, destination);

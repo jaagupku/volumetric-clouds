@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.4487893, g: 0.49522746, b: 0.55622435, a: 1}
+  m_IndirectSpecularColor: {r: 0.401437, g: 0.4213174, b: 0.42128155, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -77,15 +77,18 @@ LightmapSettings:
     m_PVRDirectSampleCount: 32
     m_PVRSampleCount: 500
     m_PVRBounces: 2
-    m_PVRFiltering: 0
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
     m_PVRFilteringMode: 1
     m_PVRCulling: 1
     m_PVRFilteringGaussRadiusDirect: 1
     m_PVRFilteringGaussRadiusIndirect: 5
     m_PVRFilteringGaussRadiusAO: 2
-    m_PVRFilteringAtrousColorSigma: 1
-    m_PVRFilteringAtrousNormalSigma: 1
-    m_PVRFilteringAtrousPositionSigma: 1
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ShowResolutionOverlay: 1
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -107,6 +110,8 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    debug:
+      m_Flags: 0
   m_NavMeshData: {fileID: 0}
 --- !u!1 &163696191
 GameObject:
@@ -135,6 +140,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -150,6 +156,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -167,9 +174,9 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Convex: 0
-  m_InflateMesh: 0
+  m_CookingOptions: 14
   m_SkinWidth: 0.01
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!33 &163696194
@@ -297,6 +304,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -312,6 +320,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -361,7 +370,6 @@ GameObject:
   m_Component:
   - component: {fileID: 330675057}
   - component: {fileID: 330675056}
-  - component: {fileID: 330675055}
   - component: {fileID: 330675054}
   - component: {fileID: 330675053}
   - component: {fileID: 330675058}
@@ -383,13 +391,6 @@ AudioListener:
   m_GameObject: {fileID: 330675052}
   m_Enabled: 1
 --- !u!124 &330675054
-Behaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 330675052}
-  m_Enabled: 1
---- !u!92 &330675055
 Behaviour:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
@@ -427,11 +428,11 @@ Camera:
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 0
+  m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
-  m_StereoMirrorMode: 0
 --- !u!4 &330675057
 Transform:
   m_ObjectHideFlags: 0
@@ -456,7 +457,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e722514e1442ec64785b53affd14f594, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  testFloat: 0.343
+  testFloat: 0.493
   testFloat2: 0.8
   testGradient:
     serializedVersion: 2
@@ -490,9 +491,6 @@ MonoBehaviour:
   debugNoLowFreqNoise: 0
   debugNoHighFreqNoise: 0
   debugDensityOnly: 0
-  cloudShader: {fileID: 4800000, guid: da806f8e56a69844993c619778a0db21, type: 3}
-  postProcessCloudsShader: {fileID: 4800000, guid: 242d9353195480c4f955926382904571,
-    type: 3}
   steps: 128
   adjustDensity: 1
   stepDensityAdjustmentCurve:
@@ -527,34 +525,35 @@ MonoBehaviour:
     m_RotationOrder: 0
   allowFlyingInClouds: 1
   blueNoiseTexture: {fileID: 2800000, guid: d25158ef7a361f6409bbeb2b86bb2118, type: 3}
+  downSample: 2
   weatherTexture: {fileID: 2800000, guid: 7b0c0dac351aa97448b755e65b3db531, type: 3}
   curlNoise: {fileID: 2800000, guid: 1da5997523109fa4bad6ecd76ad147bc, type: 3}
   startHeight: 1500
-  thickness: 4000
-  planetSize: 35000
+  thickness: 3500
+  planetSize: 200000
   planetZeroCoordinate: {x: 0, y: 0, z: 0}
   scale: 0.105
   erasionScale: 11.1
-  lowFreqMin: 0.427
-  lowFreqMax: 0.782
-  highFreqModifier: 0.219
+  lowFreqMin: 0.404
+  lowFreqMax: 0.839
+  highFreqModifier: 0.409
   curlDistortScale: 4.43
   curlDistortAmount: 302
   weatheScale: 0.1
-  coverage: 0.905
+  coverage: 1.1
   cloudSampleMultiplier: 1
   sunLight: {fileID: 1811183545}
   cloudBaseColor: {r: 0.7794118, g: 0.8646881, b: 1, a: 0}
   cloudTopColor: {r: 1, g: 1, b: 1, a: 0}
-  ambientLightFactor: 0.52
-  sunLightFactor: 0.889
+  ambientLightFactor: 0.441
+  sunLightFactor: 1
   highSunColor: {r: 1, g: 0.9882353, b: 0.8235294, a: 1}
   lowSunColor: {r: 1, g: 0.6827587, b: 0, a: 1}
-  henyeyGreensteinGForward: 0.204
-  henyeyGreensteinGBackward: 0.019
+  henyeyGreensteinGForward: 0.277
+  henyeyGreensteinGBackward: 0.111
   lightStepLength: 32
   lightConeRadius: 0.4
-  density: 1.06
+  density: 1
   globalMultiplier: 1
   windSpeed: 25
   windDirection: 0
@@ -716,6 +715,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -731,6 +731,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -813,6 +814,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -828,6 +830,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -845,9 +848,9 @@ MeshCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 2
+  serializedVersion: 3
   m_Convex: 0
-  m_InflateMesh: 0
+  m_CookingOptions: 14
   m_SkinWidth: 0.01
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!33 &1063935580
@@ -913,6 +916,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -928,6 +932,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -1045,6 +1050,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1060,6 +1066,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
@@ -1169,13 +1176,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1811183544}
-  m_LocalRotation: {x: 0.16142508, y: 0.15008067, z: -0.024845693, w: 0.97508997}
+  m_LocalRotation: {x: 0.02393385, y: 0.07191196, z: -0.0017260973, w: 0.99712235}
   m_LocalPosition: {x: 0, y: 30.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 18.8, y: 17.5, z: 0}
+  m_LocalEulerAnglesHint: {x: 2.75, y: 8.25, z: 0}
 --- !u!1 &2055417248
 GameObject:
   m_ObjectHideFlags: 0
@@ -1219,6 +1226,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -1234,6 +1242,7 @@ MeshRenderer:
   m_PreserveUVs: 1
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
   m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5

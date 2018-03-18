@@ -1,4 +1,4 @@
-﻿Shader "Hidden/PostProcessClouds"
+﻿Shader "Hidden/CloudBlender"
 {
 	Properties
 	{
