@@ -1,4 +1,4 @@
-// Copyright (c) <2015> <Playdead>
+﻿// Copyright (c) <2015> <Playdead>
 // This file is subject to the MIT License as seen in the root of this folder structure (LICENSE.TXT)
 // AUTHOR: Lasse Jon Fuglsang Pedersen <lasse@playdead.com>
 
@@ -8,18 +8,16 @@
 
 using UnityEngine;
 
-[ExecuteInEditMode]
-[RequireComponent(typeof(Camera), typeof(FrustumJitter), typeof(VelocityBuffer))]
-[AddComponentMenu("Playdead/TemporalReprojection")]
-public class TemporalReprojection : EffectBase
-{
+[RequireComponent(typeof(VelocityBuffer))]
+[AddComponentMenu("Playdead/CloudTemporalReprojection")]
+public class CloudTemporalAntiAliasing : EffectBase {
+
     private static RenderBuffer[] mrt = new RenderBuffer[2];
 
     private Camera _camera;
-    private FrustumJitter _frustumJitter;
     private VelocityBuffer _velocityBuffer;
 
-    private Shader reprojectionShader;
+    public Shader reprojectionShader;
     private Material reprojectionMaterial;
     private RenderTexture[,] reprojectionBuffer;
     private int[] reprojectionIndex = new int[2] { -1, -1 };
@@ -38,7 +36,7 @@ public class TemporalReprojection : EffectBase
     public bool useYCoCg = false;
     public bool useClipping = true;
     public bool useDilation = true;
-    public bool useMotionBlur = true;
+    public bool useMotionBlur = false;
     public bool useOptimizations = true;
 
     [Range(0.0f, 1.0f)] public float feedbackMin = 0.88f;
@@ -47,11 +45,15 @@ public class TemporalReprojection : EffectBase
     public float motionBlurStrength = 1.0f;
     public bool motionBlurIgnoreFF = false;
 
+    public void SetCamera(Camera camera)
+    {
+        _camera = camera;
+    }
+
     void Reset()
     {
-        _camera = GetComponent<Camera>();
-        _frustumJitter = GetComponent<FrustumJitter>();
         _velocityBuffer = GetComponent<VelocityBuffer>();
+        reprojectionShader = Shader.Find("Playdead/Post/TemporalReprojection");
     }
 
     void Clear()
@@ -129,11 +131,7 @@ public class TemporalReprojection : EffectBase
         int indexRead = reprojectionIndex[eyeIndex];
         int indexWrite = (reprojectionIndex[eyeIndex] + 1) % 2;
 
-        Vector4 jitterUV = _frustumJitter.activeSample;
-        jitterUV.x /= source.width;
-        jitterUV.y /= source.height;
-        jitterUV.z /= source.width;
-        jitterUV.w /= source.height;
+        Vector4 jitterUV = Vector4.zero;
 
         reprojectionMaterial.SetVector("_JitterUV", jitterUV);
         reprojectionMaterial.SetTexture("_VelocityBuffer", _velocityBuffer.activeVelocityBuffer);
@@ -159,7 +157,7 @@ public class TemporalReprojection : EffectBase
         }
     }
 
-    void OnRenderImage(RenderTexture source, RenderTexture destination)
+    public void TemporalAntiAliasing(RenderTexture source, RenderTexture destination)
     {
         if (destination != null && source.antiAliasing == destination.antiAliasing)// resolve without additional blit when not end of chain
         {

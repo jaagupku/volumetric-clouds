@@ -19,6 +19,7 @@
 			#pragma multi_compile __ DEBUG_NO_HIGH_FREQ_NOISE
 			#pragma multi_compile __ DEBUG_DENSITY
 			#pragma multi_compile __ ALLOW_IN_CLOUDS
+			#pragma multi_compile __ RANDOM_JITTER
 			
 			#include "UnityCG.cginc"
 
@@ -479,10 +480,10 @@
 				// Ray end pos
 
 				
-
+#if defined(RANDOM_JITTER)
 				rs += rd * stepSize * rand(_Time.zw + duv);
 				//rs += rd * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy, stepSize);
-
+#endif
 				//float2 ruv = (duv + _Randomness.xy) * _ScreenParams.xy / 512.0;
 				//return tex2D(_BlueNoise, ruv);
 

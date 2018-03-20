@@ -373,8 +373,9 @@ GameObject:
   - component: {fileID: 330675054}
   - component: {fileID: 330675053}
   - component: {fileID: 330675058}
-  - component: {fileID: 330675061}
   - component: {fileID: 330675060}
+  - component: {fileID: 330675055}
+  - component: {fileID: 330675061}
   - component: {fileID: 330675059}
   m_Layer: 0
   m_Name: Main Camera
@@ -397,6 +398,31 @@ Behaviour:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 330675052}
   m_Enabled: 1
+--- !u!114 &330675055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 330675052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac3a0e04a74bbb84db4c9bb3cddb467e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reprojectionShader: {fileID: 4800000, guid: 7ca93c1a56ee0154b8c714591d6d211a, type: 3}
+  neighborhood: 1
+  unjitterColorSamples: 1
+  unjitterNeighborhood: 0
+  unjitterReprojection: 0
+  useYCoCg: 0
+  useClipping: 1
+  useDilation: 1
+  useMotionBlur: 0
+  useOptimizations: 1
+  feedbackMin: 0.88
+  feedbackMax: 0.97
+  motionBlurStrength: 1
+  motionBlurIgnoreFF: 0
 --- !u!20 &330675056
 Camera:
   m_ObjectHideFlags: 0
@@ -491,7 +517,7 @@ MonoBehaviour:
   debugNoLowFreqNoise: 0
   debugNoHighFreqNoise: 0
   debugDensityOnly: 0
-  steps: 128
+  steps: 96
   adjustDensity: 1
   stepDensityAdjustmentCurve:
     serializedVersion: 2
@@ -524,8 +550,10 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 0
   allowFlyingInClouds: 1
-  blueNoiseTexture: {fileID: 2800000, guid: d25158ef7a361f6409bbeb2b86bb2118, type: 3}
   downSample: 2
+  blueNoiseTexture: {fileID: 2800000, guid: d25158ef7a361f6409bbeb2b86bb2118, type: 3}
+  randomJitter: 1
+  temporalAntiAliasing: 1
   weatherTexture: {fileID: 2800000, guid: 7b0c0dac351aa97448b755e65b3db531, type: 3}
   curlNoise: {fileID: 2800000, guid: 1da5997523109fa4bad6ecd76ad147bc, type: 3}
   startHeight: 1500
@@ -540,7 +568,7 @@ MonoBehaviour:
   curlDistortScale: 4.43
   curlDistortAmount: 302
   weatheScale: 0.1
-  coverage: 1.1
+  coverage: 0.93
   cloudSampleMultiplier: 1
   sunLight: {fileID: 1811183545}
   cloudBaseColor: {r: 0.7794118, g: 0.8646881, b: 1, a: 0}
@@ -565,12 +593,11 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 330675052}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 65f5677aa325c184f801528d78a73827, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  reprojectionShader: {fileID: 4800000, guid: 7ca93c1a56ee0154b8c714591d6d211a, type: 3}
   neighborhood: 1
   unjitterColorSamples: 1
   unjitterNeighborhood: 0
@@ -607,7 +634,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 330675052}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 899f97884c6d96b4ca20648ec109a37f, type: 3}
   m_Name: 

@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [ExecuteInEditMode]
-[RequireComponent(typeof(Camera))]
+[RequireComponent(typeof(Camera), typeof(CloudTemporalAntiAliasing))]
 [AddComponentMenu("Effects/Clouds")]
 public class CloudsScript : SceneViewFilter
 {
@@ -24,9 +24,11 @@ public class CloudsScript : SceneViewFilter
     public bool adjustDensity = true;
     public AnimationCurve stepDensityAdjustmentCurve = new AnimationCurve(new Keyframe(0.0f, 3.019f), new Keyframe(0.25f, 1.233f), new Keyframe(0.5f, 1.0f), new Keyframe(1.0f, 0.892f));
     public bool allowFlyingInClouds = false;
-    public Texture2D blueNoiseTexture;
     [Range(1, 8)]
     public int downSample = 1;
+    public Texture2D blueNoiseTexture;
+    public bool randomJitter = true;
+    public bool temporalAntiAliasing = true;
 
     [HeaderAttribute("Cloud modeling")]
     public Texture2D weatherTexture;
@@ -62,7 +64,7 @@ public class CloudsScript : SceneViewFilter
     public Color cloudTopColor = new Color32(255, 255, 255, 255);
     [Range(0.0f, 1.0f)]
     public float ambientLightFactor = 0.551f;
-    [Range(0.0f, 1.0f)]
+    [Range(0.0f, 1.5f)]
     public float sunLightFactor = 0.79f;
     public Color highSunColor = new Color32(255, 252, 210, 255);
     public Color lowSunColor = new Color32(255, 174, 0, 255);
@@ -90,7 +92,8 @@ public class CloudsScript : SceneViewFilter
 
     private Texture3D _cloudShapeTexture;
     private Texture3D _cloudErasionTexture;
-    private RenderTexture _cloudRenderTexture;
+
+    private CloudTemporalAntiAliasing _temporalAntiAliasing;
 
     public Material EffectMaterial
     {
@@ -122,13 +125,23 @@ public class CloudsScript : SceneViewFilter
     }
     private Material _UpscaleMaterial;
 
+    void Reset()
+    {
+        _temporalAntiAliasing = GetComponent<CloudTemporalAntiAliasing>();
+        _temporalAntiAliasing.SetCamera(CurrentCamera);
+    }
+
+    void Awake()
+    {
+        Reset();
+    }
+
     void Start()
     {
         if (_EffectMaterial)
             DestroyImmediate(_EffectMaterial);
         if (_UpscaleMaterial)
             DestroyImmediate(_UpscaleMaterial);
-        createRenderTexture();
         QualitySettings.vSyncCount = 1;
     }
 
@@ -136,7 +149,6 @@ public class CloudsScript : SceneViewFilter
     {
         if (_EffectMaterial)
             DestroyImmediate(_EffectMaterial);
-        destroyRenderTexture();
     }
 
     public Camera CurrentCamera
@@ -182,22 +194,6 @@ public class CloudsScript : SceneViewFilter
         
     }
 
-    private void createRenderTexture() // atm doing with temporary render textures, not needed maybe.
-    {
-        if (_cloudRenderTexture == null)
-        {
-            _cloudRenderTexture = new RenderTexture((int)(Screen.width * 0.5f), (int)(Screen.height * 0.5f), 0, CurrentCamera.allowHDR ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, RenderTextureReadWrite.Default);
-            _cloudRenderTexture.filterMode = FilterMode.Bilinear;
-            _cloudRenderTexture.hideFlags = HideFlags.HideAndDontSave;
-        }
-    }
-
-    private void destroyRenderTexture()
-    {
-        DestroyImmediate(_cloudRenderTexture);
-        _cloudRenderTexture = null;
-    }
-
     private Vector4 gradientToVector4( Gradient gradient )
     {
         if (gradient.colorKeys.Length != 4)
@@ -214,7 +210,7 @@ public class CloudsScript : SceneViewFilter
     [ImageEffectOpaque]
     public void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        if (!EffectMaterial == null || weatherTexture == null || curlNoise == null || blueNoiseTexture == null)
+        if (EffectMaterial == null || weatherTexture == null || curlNoise == null || blueNoiseTexture == null)
         {
             Graphics.Blit(source, destination); // do nothing
             return;
@@ -259,6 +255,7 @@ public class CloudsScript : SceneViewFilter
         updateMaterialKeyword(debugNoHighFreqNoise, "DEBUG_NO_HIGH_FREQ_NOISE");
         updateMaterialKeyword(debugDensityOnly, "DEBUG_DENSITY");
         updateMaterialKeyword(allowFlyingInClouds, "ALLOW_IN_CLOUDS");
+        updateMaterialKeyword(randomJitter, "RANDOM_JITTER");
 
         EffectMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
         EffectMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
@@ -324,14 +321,23 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetVector("_CameraWS", cameraPos);
         EffectMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
-        RenderTexture rt = RenderTexture.GetTemporary((int)(source.width / ((float) downSample)), (int)(source.height / ((float)downSample)), 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default, source.antiAliasing);
-        CustomGraphicsBlit(source, rt, EffectMaterial, 0);
+        RenderTexture rtClouds = RenderTexture.GetTemporary((int)(source.width / ((float) downSample)), (int)(source.height / ((float)downSample)), 0, source.format, RenderTextureReadWrite.Default, source.antiAliasing);
+        CustomGraphicsBlit(source, rtClouds, EffectMaterial, 0);
         
+        if (temporalAntiAliasing)
+        {
+            RenderTexture rtTemporal = RenderTexture.GetTemporary(rtClouds.width, rtClouds.height, 0, rtClouds.format, RenderTextureReadWrite.Default, source.antiAliasing);
+            _temporalAntiAliasing.TemporalAntiAliasing(rtClouds, rtTemporal);
+            UpscaleMaterial.SetTexture("_Clouds", rtTemporal);
+            RenderTexture.ReleaseTemporary(rtTemporal);
+        }
+        else
+        {
+            UpscaleMaterial.SetTexture("_Clouds", rtClouds);
+        }
         
-        UpscaleMaterial.SetTexture("_Clouds", rt);
-
         Graphics.Blit(source, destination, UpscaleMaterial, 0);
-        RenderTexture.ReleaseTemporary(rt);
+        RenderTexture.ReleaseTemporary(rtClouds);
     }
     private void Update()
     {
