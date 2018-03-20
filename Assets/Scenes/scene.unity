@@ -598,6 +598,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65f5677aa325c184f801528d78a73827, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  reprojectionShader: {fileID: 4800000, guid: 7ca93c1a56ee0154b8c714591d6d211a, type: 3}
   neighborhood: 1
   unjitterColorSamples: 1
   unjitterNeighborhood: 0

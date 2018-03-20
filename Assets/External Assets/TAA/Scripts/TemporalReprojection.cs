@@ -19,7 +19,7 @@ public class TemporalReprojection : EffectBase
     private FrustumJitter _frustumJitter;
     private VelocityBuffer _velocityBuffer;
 
-    private Shader reprojectionShader;
+    public Shader reprojectionShader;
     private Material reprojectionMaterial;
     private RenderTexture[,] reprojectionBuffer;
     private int[] reprojectionIndex = new int[2] { -1, -1 };

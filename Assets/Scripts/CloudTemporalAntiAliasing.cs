@@ -17,7 +17,7 @@ public class CloudTemporalAntiAliasing : EffectBase {
     private Camera _camera;
     private VelocityBuffer _velocityBuffer;
 
-    public Shader reprojectionShader;
+    private Shader reprojectionShader;
     private Material reprojectionMaterial;
     private RenderTexture[,] reprojectionBuffer;
     private int[] reprojectionIndex = new int[2] { -1, -1 };
@@ -165,7 +165,7 @@ public class CloudTemporalAntiAliasing : EffectBase {
         }
         else
         {
-            RenderTexture internalDestination = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.DefaultHDR, RenderTextureReadWrite.Default, source.antiAliasing);
+            RenderTexture internalDestination = RenderTexture.GetTemporary(source.width, source.height, 0, source.format, RenderTextureReadWrite.Default, source.antiAliasing);
             {
                 Resolve(source, internalDestination);
                 Graphics.Blit(internalDestination, destination);
