@@ -73,11 +73,11 @@ public class FirstPersonController : MonoBehaviour {
         {
             //float a = Mathf.Clamp(cc.transform.position.y / 2000.0f, 0.2f, 10.0f);
             currentSpeed = speed * 300.0f;
-            if (Input.GetKey("q"))
+            if (Input.GetKey("e"))
             {
                 verticalVelocity = 1.0f;
             }
-            else if (Input.GetKey("e"))
+            else if (Input.GetKey("q"))
             {
                 verticalVelocity = -1.0f;
             }

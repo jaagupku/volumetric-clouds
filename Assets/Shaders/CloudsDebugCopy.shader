@@ -1,4 +1,4 @@
-﻿Shader "Hidden/Clouds"
+﻿Shader "Hidden/CloudsDebug"
 {
 	Properties
 	{
@@ -47,7 +47,6 @@
 			uniform sampler2D _MainTex;
 			uniform float4 _MainTex_TexelSize;
 
-			uniform sampler2D _AltoClouds;
 			uniform sampler3D _ShapeTexture;
 			uniform sampler3D _ErasionTexture;
 			uniform sampler2D _WeatherTexture;
@@ -95,16 +94,13 @@
 			uniform float3 _WindDirection;
 			uniform float3 _WindOffset;
 			uniform float2 _CoverageWindOffset;
-			uniform float2 _HighCloudsWindOffset;
-
-			uniform float _CoverageHigh;
-			uniform float _CoverageHighScale;
-			uniform float _HighCloudsScale;
 
 			uniform float2 _LowFreqMinMax;
 			uniform float _HighFreqModifier;
 
 			uniform int _Steps;
+
+			#define debugStep 0.001;
 
 			v2f vert (appdata v)
 			{
@@ -169,12 +165,16 @@
 				return smoothstep(gradient.x, gradient.y, height) - smoothstep(gradient.z, gradient.w, height);
 			}
 
-			float3 sampleWeather(float3 p) {
-				return tex2Dlod(_WeatherTexture, float4((p.xz + _CoverageWindOffset) * _WeatherScale + float2(0.5, 0.5), 0, 0)).rgb;
+			float4 sampleWeather(float3 p) {
+				float4 t = tex2Dlod(_WeatherTexture, float4((p.xz + _CoverageWindOffset) * _WeatherScale + float2(0.5, 0.5), 0, 0));
+				t.a = debugStep;
+				return t;
 			}
 
-			float sampleCloudDensity(float3 p, float3 weather_data, float lod, bool sampleDetail)
+			float2 sampleCloudDensity(float3 p, float3 weather_data, float lod, bool sampleDetail)
 			{
+				float DEBUGVALUE = 0.0;
+
 				float height_fraction = getHeightFractionForPoint(p);
 
 				float3 pos = p + _WindOffset;
@@ -185,6 +185,7 @@
 				base_cloud = remap(base_cloud * pow(1.20 - height_fraction, 0.5), _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0);
 #else
 				float4 low_frequency_noises = tex3Dlod(_ShapeTexture, float4(pos * _Scale, lod));
+				DEBUGVALUE += debugStep;
 				//float low_freq_FBM = low_frequency_noises.g * 0.625 +low_frequency_noises.b * 0.25 + low_frequency_noises.a * 0.125;
 				float base_cloud = low_frequency_noises.r;//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);//
 				base_cloud = remap(base_cloud * pow(1.20 - height_fraction, 0.5), _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0);
@@ -204,10 +205,12 @@
 				if (final_cloud > 0.0 && sampleDetail)
 				{
 					float3 curl_noise = mad(tex2Dlod(_CurlNoise, float4(p.xz * _Scale * _CurlDistortScale, 0, 0)).rgb, 2.0, -1.0);
+					DEBUGVALUE += debugStep;
 
 					pos += curl_noise * height_fraction * _CurlDistortAmount;
 
 					float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(pos * _Scale * _ErasionScale, lod)).rgb;
+					DEBUGVALUE += debugStep;
 					float high_freq_FBM = 1.0 - high_frequency_noises.r;//high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
 
 					float high_freq_noise_modifier = lerp(high_freq_FBM, 1.0 - high_freq_FBM, saturate(height_fraction * 10.0));
@@ -220,7 +223,7 @@
 				}
 #endif
 				
-				return saturate(final_cloud *_InverseStep * _SampleMultiplier);
+				return float2(saturate(final_cloud *_InverseStep * _SampleMultiplier), DEBUGVALUE);
 			}
 
 			// GPU Pro 7
@@ -248,7 +251,7 @@
 					max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward));
 			}
 
-			float3 sampleConeToLight(float3 pos, float3 lightDir, float cosAngle, float density, float lod)
+			float4 sampleConeToLight(float3 pos, float3 lightDir, float cosAngle, float density, float lod)
 			{
 				const float3 RandomUnitSphere[5] =
 				{
@@ -258,7 +261,7 @@
 					{ -0.2, 0.6, -0.8 },
 					{ 0.4, 0.3, 0.9 }
 				};
-
+				float DEBUGVALUE = 0.0;
 				float densityAlongCone = 0.0;
 				const int steps = 5;
 				float3 weather_data;
@@ -268,13 +271,21 @@
 					float3 randomOffset = RandomUnitSphere[i] * _LightStepLength * _LightConeRadius * ((float) (i + 1));
 
 					float3 p = pos + randomOffset;
-					weather_data = sampleWeather(p);
-					densityAlongCone += sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5, true);
+					float4 weather = sampleWeather(p);
+					weather_data = weather.rgb;
+					DEBUGVALUE += weather.a;
+					float2 cloud = sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5, true);
+					densityAlongCone += cloud.x;
+					DEBUGVALUE += cloud.y;
 				}
 				
 				pos += 8.0 * _LightStepLength * lightDir;
-				weather_data = sampleWeather(pos);
-				densityAlongCone += sampleCloudDensity(pos, weather_data, lod + 2, true) * 3.4; 
+				float4 weather = sampleWeather(pos);
+				weather_data = weather.rgb;
+				DEBUGVALUE += weather.a;
+				float2 cloud = sampleCloudDensity(pos, weather_data, lod + ((float)i) * 0.5, true);
+				densityAlongCone += cloud.x;
+				DEBUGVALUE += cloud.y;
 				/*
 				pos += 5.0 * _LightStepLength * lightDir;
 				weather_data = sampleWeather(pos);
@@ -293,24 +304,26 @@
 					j++;
 				}
 				*/
-				return calculateLightEnergy(densityAlongCone, cosAngle, density, weather_data.b) * _SunColor;
+				float3 light = calculateLightEnergy(densityAlongCone, cosAngle, density, weather_data.b) * _SunColor;
+				DEBUGVALUE *= 1.0;
+				return float4(light, DEBUGVALUE);
 			}
 
 			fixed4 raymarch(float3 ro, float3 rd, float steps, float stepSize, float depth)
 			{
+				float DEBUGVALUE = 0.0;
 				float3 pos = ro;
-				fixed4 res = 0.0;
+				fixed4 res = fixed4(0.0, 0.0, 0.0, 0.0);
 				float cosAngle = dot(rd, _SunDir);
 				float transmittance = 1.0;
 				float lod = 0.0;
 
 				float zeroCount = 0.0;//
-				float stepLength = 3.0;
+				float stepLength = 1.0;
 
 				for (float i = 0.0; i < steps; i += stepLength)
 				{
 					if (distance(_CameraWS, pos) >= depth || res.a >= 0.99) {
-						return res;
 						break;
 					}
 #if defined(ALLOW_IN_CLOUDS)
@@ -319,7 +332,9 @@
 						break;
 					}
 #endif
-					float3 weather_data = sampleWeather(pos);
+					float4 we = sampleWeather(pos);
+					float3 weather_data = we.rgb;
+					DEBUGVALUE += we.a;
 					if (weather_data.r - _Coverage <= 0.0)
 					{
 						pos += stepSize * rd *stepLength;//
@@ -328,7 +343,9 @@
 						continue;
 					}
 
-					float cloudDensity = saturate(sampleCloudDensity(pos, weather_data, lod, true));
+					float2 cl = sampleCloudDensity(pos, weather_data, lod, true);
+					float cloudDensity = cl.x;
+					DEBUGVALUE += cl.y;
 
 					float4 particle = float4(cloudDensity, cloudDensity, cloudDensity, cloudDensity);
 					if (cloudDensity > 0.0)
@@ -340,8 +357,12 @@
 						{//
 							i -= stepLength;//
 							pos -= stepSize * rd * stepLength;//
-							weather_data = sampleWeather(pos);//
-							cloudDensity = saturate(sampleCloudDensity(pos, weather_data, lod, true));//
+							we = sampleWeather(pos);//
+							weather_data = we.rgb;//
+							DEBUGVALUE += we.a;//
+							cl = sampleCloudDensity(pos, weather_data, lod, true);//
+							cloudDensity = cl.x;//
+							DEBUGVALUE += cl.y;//
 							particle = float4(cloudDensity, cloudDensity, cloudDensity, cloudDensity);//
 						}//
 
@@ -353,7 +374,9 @@
 						transmittance *= T;
 #if defined(DEBUG_DENSITY)
 #else
-						float3 lightEnergy = sampleConeToLight(pos, _SunDir, cosAngle, cloudDensity, lod);
+						float4 le = sampleConeToLight(pos, _SunDir, cosAngle, cloudDensity, lod);
+						float3 lightEnergy = le.rgb;
+						DEBUGVALUE += le.a;
 						float3 ambientLight = lerp(_CloudBaseColor, _CloudTopColor, getHeightFractionForPoint(pos));
 
 						lightEnergy *= _SunLightFactor;
@@ -372,8 +395,11 @@
 
 					pos += stepSize * rd * stepLength;//
 				}
-
+#if 0
 				return res;
+#else
+				return fixed4(DEBUGVALUE, DEBUGVALUE, DEBUGVALUE, 1.0);
+#endif
 			}
 
 			// https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
@@ -422,39 +448,6 @@
 				float noise = tex2D(_BlueNoise, uv).x;
 				noise = mad(noise, 2.0, -1.0);
 				return noise * stepSize;
-			}
-
-			fixed4 altoClouds(float3 ro, float3 rd, float depth) {
-				fixed4 res = 0.0;
-				float3 pos = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
-
-				if (distance(ro, pos) < depth) {
-					
-					//float coverage = sampleWeather(pos + float3(1500.0, 0.0, 300.0) - float3(_CoverageWindOffset.x, 0.0, _CoverageWindOffset.y)).r;
-					float alto = tex2D(_AltoClouds, (pos.xz + _HighCloudsWindOffset) * _HighCloudsScale).r * 2.0;
-
-					float coverage = tex2Dlod(_WeatherTexture, float4((pos.xz + _HighCloudsWindOffset) * _CoverageHighScale, 0, 0)).r;
-					coverage = saturate(coverage - _CoverageHigh);
-
-					alto = remap(alto, 1.0 - coverage, 1.0, 0.0, 1.0);
-
-					alto *= coverage;
-
-					float cosAngle = dot(rd, _SunDir);
-
-					float3 directLight = max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * _SunColor;
-					directLight *= _SunLightFactor * 0.2;
-					float3 ambientLight = _CloudTopColor * _AmbientLightFactor;
-					float4 aLparticle = float4(ambientLight + directLight, alto);
-
-					float T = 1.0 - aLparticle.a;
-					aLparticle.a = 1.0 - T;
-					aLparticle.rgb *= aLparticle.a;
-
-					res = (1.0 - res.a) * aLparticle + res;
-				}
-
-				return saturate(res);
 			}
 
 			fixed4 frag (v2f i) : SV_Target
@@ -563,10 +556,7 @@
 
 				//fixed a = tex3Dlod(_ShapeTexture, float4(rs * _Scale * 2.0, 0)).r;
 				//return fixed4(a, a, a, 1.0);
-				fixed4 clouds2D = altoClouds(rs, rd, depth);
-				fixed4 clouds3D = raymarch(rs, rd, steps, stepSize, depth);
-
-				return clouds2D * (1.0 - clouds3D.a) + clouds3D;
+				return raymarch(rs, rd, steps, stepSize, depth);
 			}
 			ENDCG
 		}
