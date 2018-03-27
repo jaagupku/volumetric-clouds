@@ -31,7 +31,6 @@ public class CloudsScript : SceneViewFilter
     public bool temporalAntiAliasing = true;
 
     [HeaderAttribute("Cloud modeling")]
-    public Texture2D weatherTexture;
     public Texture2D curlNoise;
     public float startHeight = 1500.0f;
     public float thickness = 4000.0f;
@@ -85,6 +84,7 @@ public class CloudsScript : SceneViewFilter
     public float lightStepLength = 64.0f;
     [Range(0.0f, 1.0f)]
     public float lightConeRadius = 0.4f;
+    public bool randomUnitSphere = true;
     [Range(0.0f, 4.0f)]
     public float density = 1.0f;
 
@@ -107,6 +107,9 @@ public class CloudsScript : SceneViewFilter
     private Texture3D _cloudErasionTexture;
 
     private CloudTemporalAntiAliasing _temporalAntiAliasing;
+
+    [HideInInspector]
+    public Texture2D weatherTexture;
 
     public Material EffectMaterial
     {
@@ -163,7 +166,7 @@ public class CloudsScript : SceneViewFilter
         //steps = 6 + ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 250f));
         _multipliedWindSpeed = windSpeed * globalMultiplier;
         float angleWind = windDirection * Mathf.Deg2Rad;
-        Vector3 _windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.2f, Mathf.Sin(angleWind));
+        _windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.25f, Mathf.Sin(angleWind));
         _windOffset += _multipliedWindSpeed * _windDirectionVector * Time.deltaTime;
 
         float angleCoverage = coverageWindDirection * Mathf.Deg2Rad;
@@ -269,7 +272,7 @@ public class CloudsScript : SceneViewFilter
         Color cloudTopColorMix = cloudBaseColor;
         float henyeyGreensteinGBackwardLerp = henyeyGreensteinGBackward;
 
-        if (sunAngle > 180.0f)
+        if (sunAngle > 170.0f)
         {
             float gradient = Mathf.Max(0.0f, (sunAngle - 330.0f) / 30.0f);
             float gradient2 = gradient * gradient;
@@ -286,9 +289,11 @@ public class CloudsScript : SceneViewFilter
         updateMaterialKeyword(debugDensityOnly, "DEBUG_DENSITY");
         updateMaterialKeyword(allowFlyingInClouds, "ALLOW_IN_CLOUDS");
         updateMaterialKeyword(randomJitter, "RANDOM_JITTER");
+        updateMaterialKeyword(randomUnitSphere, "RANDOM_UNIT_SPHERE");
 
         EffectMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
         EffectMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
+        EffectMaterial.SetVector("_ZeroPoint", planetZeroCoordinate);
         EffectMaterial.SetColor("_SunColor", sunColor);
         //EffectMaterial.SetColor("_SunColor", sunLight.color);
 
@@ -311,7 +316,7 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_CoverageHighScale", highCoverageScale * weatheScale * 0.001f);
         EffectMaterial.SetFloat("_HighCloudsScale", highCloudsScale * 0.002f);
 
-    EffectMaterial.SetFloat("_CurlDistortAmount", curlDistortAmount);
+        EffectMaterial.SetFloat("_CurlDistortAmount", 150.0f + curlDistortAmount);
         EffectMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
             
         EffectMaterial.SetFloat("_LightConeRadius", lightConeRadius);
@@ -319,11 +324,11 @@ public class CloudsScript : SceneViewFilter
         EffectMaterial.SetFloat("_SphereSize", planetSize);
         EffectMaterial.SetVector("_CloudHeightMinMax", new Vector2(startHeight, startHeight + thickness));
         EffectMaterial.SetFloat("_Thickness", thickness);
-        EffectMaterial.SetFloat("_Scale", 0.0001f + scale * 0.001f);
+        EffectMaterial.SetFloat("_Scale", 0.00001f + scale * 0.0004f);
         EffectMaterial.SetFloat("_ErasionScale", erasionScale);
         EffectMaterial.SetVector("_LowFreqMinMax", new Vector4(lowFreqMin, lowFreqMax));
         EffectMaterial.SetFloat("_HighFreqModifier", highFreqModifier);
-        EffectMaterial.SetFloat("_WeatherScale", weatheScale * 0.001f);
+        EffectMaterial.SetFloat("_WeatherScale", weatheScale * 0.00025f);
         EffectMaterial.SetFloat("_Coverage", 1.0f - coverage);
         EffectMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
         EffectMaterial.SetFloat("_HenyeyGreensteinGBackward", -henyeyGreensteinGBackwardLerp);

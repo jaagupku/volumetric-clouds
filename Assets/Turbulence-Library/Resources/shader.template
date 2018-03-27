@@ -1,0 +1,53 @@
+${Comments}
+
+Shader "Noise/${Name}" 
+{
+	Properties 
+	{
+${Properties}
+	}
+
+	CGINCLUDE
+${Include}
+	ENDCG
+
+	SubShader 
+	{
+${Tags}
+
+${Blending}
+		
+		CGPROGRAM
+${Lighting}
+		#pragma glsl
+		#pragma target 3.0
+		
+${Uniforms}
+
+		struct Input 
+		{
+${Input}
+		};
+
+		void vert (inout appdata_full v, out Input OUT)
+		{
+			UNITY_INITIALIZE_OUTPUT(Input, OUT);
+${Vertex}
+		}
+
+		void surf (Input IN, inout SurfaceOutput o) 
+		{
+${Noise}
+			
+${Normalize}
+			
+${ColoringTexturing}
+
+			o.Albedo = color.rgb;
+${Alpha}
+		}
+		ENDCG
+	}
+	
+	FallBack "Diffuse"
+}

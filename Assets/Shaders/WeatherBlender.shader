@@ -1,8 +1,7 @@
-﻿Shader "Hidden/CloudBlender"
+﻿Shader "Hidden/WeatherBlender"
 {
 	Properties
 	{
-		_MainTex ("Texture", 2D) = "white" {}
 	}
 	SubShader
 	{
@@ -28,9 +27,9 @@
 				float4 pos : SV_POSITION;
 			};
 
-			sampler2D _MainTex;
-			sampler2D _Clouds;
-			float4 _MainTex_TexelSize;
+			sampler2D _PrevWeather;
+			sampler2D _NextWeather;
+			float _Alpha;
 			
 			v2f vert(appdata v)
 			{
@@ -39,19 +38,14 @@
 				o.pos = UnityObjectToClipPos(v.vertex);
 				o.uv = v.uv.xy;
 
-#if UNITY_UV_STARTS_AT_TOP
-				if (_MainTex_TexelSize.y < 0)
-					o.uv.y = 1 - o.uv.y;
-#endif
-
 				return o;
 			}
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				fixed4 back = tex2D(_MainTex, i.uv);
-				fixed4 cloud = tex2D(_Clouds, i.uv);
-				return fixed4(back.rgb * (1.0 - cloud.a) + cloud.rgb, 1.0);
+				fixed4 prev = tex2D(_PrevWeather, i.uv);
+				fixed4 next = tex2D(_NextWeather, i.uv);
+				return lerp(prev, next, _Alpha);
 			}
 			ENDCG
 		}
