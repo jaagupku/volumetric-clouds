@@ -290,7 +290,6 @@
 #else
 					float3 randomOffset = RandomUnitSphere[i] * _LightStepLength * _LightConeRadius * ((float)(i + 1));
 #endif
-
 					float3 p = pos + randomOffset;
 					weather_data = sampleWeather(p);
 					densityAlongCone += sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5, true) * weatherDensity(weather_data);
@@ -348,7 +347,7 @@
 					{
 						pos += stepSize * rd *stepLength;//
 						zeroCount += 1.0;//
-						stepLength = zeroCount > 8.0 ? BIG_STEP : 1.0;//
+						stepLength = zeroCount > 10.0 ? BIG_STEP : 1.0;//
 						continue;
 					}
 
