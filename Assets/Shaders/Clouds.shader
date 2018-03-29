@@ -470,7 +470,7 @@
 					float3 directLight = max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * _SunColor;
 					directLight *= _SunLightFactor * 0.2;
 					float3 ambientLight = _CloudTopColor * _AmbientLightFactor;
-					float4 aLparticle = float4(ambientLight + directLight, alto);
+					float4 aLparticle = float4(min(ambientLight + directLight, 0.7), alto);
 
 					float T = 1.0 - aLparticle.a;
 					aLparticle.a = 1.0 - T;
