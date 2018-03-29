@@ -307,7 +307,7 @@
 					float4 weather = sampleWeather(p);
 					weather_data = weather.rgb;
 					DEBUGVALUE += weather.a;
-					float2 cloud = sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5, true) * weatherDensity(weather_data);
+					float2 cloud = sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5,  i > 2 ? true : false) * weatherDensity(weather_data);
 					densityAlongCone += cloud.x;
 					DEBUGVALUE += cloud.y;
 				}

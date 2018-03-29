@@ -22,6 +22,7 @@ public class FirstPersonController : MonoBehaviour {
         cc = GetComponent<CharacterController>();
         rotate = true;
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -99,11 +100,6 @@ public class FirstPersonController : MonoBehaviour {
         if (Input.GetKey(KeyCode.LeftShift)) // Sprinting
         {
             currentSpeed *= 2.2f;
-            //Camera.main.fieldOfView = 100;
-        }
-        else
-        {
-            //Camera.main.fieldOfView = 80;
         }
 
         if (Input.GetKeyDown("f")) // Toggle Flying
@@ -115,8 +111,9 @@ public class FirstPersonController : MonoBehaviour {
         cc.Move(movement * currentSpeed * Time.deltaTime);
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Cursor.lockState = rotate ? CursorLockMode.None : CursorLockMode.Locked;
             rotate = !rotate;
+            Cursor.lockState = rotate ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !Cursor.visible;
         }
     }
 }

@@ -19,7 +19,7 @@
 			#pragma multi_compile __ DEBUG_NO_HIGH_FREQ_NOISE
 			#pragma multi_compile __ DEBUG_DENSITY
 			#pragma multi_compile __ ALLOW_IN_CLOUDS
-			#pragma multi_compile __ RANDOM_JITTER
+			#pragma multi_compile __ RANDOM_JITTER_WHITE RANDOM_JITTER_BLUE
 			#pragma multi_compile __ RANDOM_UNIT_SPHERE
 			
 			#include "UnityCG.cginc"
@@ -442,11 +442,11 @@
 				return rayOrigin;
 			}
 
-			float getRandomRayOffset(float2 uv, float stepSize)
+			float getRandomRayOffset(float2 uv)
 			{
 				float noise = tex2D(_BlueNoise, uv).x;
 				noise = mad(noise, 2.0, -1.0);
-				return noise * stepSize;
+				return noise;
 			}
 
 			fixed4 altoClouds(float3 ro, float3 rd, float depth) {
@@ -565,9 +565,11 @@
 				// Ray end pos
 
 				
-#if defined(RANDOM_JITTER)
+#if defined(RANDOM_JITTER_WHITE)
 				rs += rd * stepSize * rand(_Time.zw + duv) * BIG_STEP * 0.75;
-				//rs += rd * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy, stepSize);
+#endif
+#if defined(RANDOM_JITTER_BLUE)
+				rs += rd * stepSize * BIG_STEP * 0.75 * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy);
 #endif
 				//float2 ruv = (duv + _Randomness.xy) * _ScreenParams.xy / 512.0;
 				//return tex2D(_BlueNoise, ruv);

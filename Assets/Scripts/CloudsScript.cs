@@ -6,6 +6,14 @@ using UnityEngine;
 [AddComponentMenu("Effects/Clouds")]
 public class CloudsScript : SceneViewFilter
 {
+
+    public enum RandomJitter
+    {
+        Off,
+        White,
+        Blue
+    }
+
     [Range(0.0f, 1.0f)]
     public float testFloat = 1.0f;
     [Range(0.0f, 1.0f)]
@@ -27,7 +35,7 @@ public class CloudsScript : SceneViewFilter
     [Range(1, 8)]
     public int downSample = 1;
     public Texture2D blueNoiseTexture;
-    public bool randomJitter = true;
+    public RandomJitter randomJitterNoise = RandomJitter.Blue;
     public bool temporalAntiAliasing = true;
 
     [HeaderAttribute("Cloud modeling")]
@@ -287,8 +295,23 @@ public class CloudsScript : SceneViewFilter
         updateMaterialKeyword(debugNoHighFreqNoise, "DEBUG_NO_HIGH_FREQ_NOISE");
         updateMaterialKeyword(debugDensityOnly, "DEBUG_DENSITY");
         updateMaterialKeyword(allowFlyingInClouds, "ALLOW_IN_CLOUDS");
-        updateMaterialKeyword(randomJitter, "RANDOM_JITTER");
         updateMaterialKeyword(randomUnitSphere, "RANDOM_UNIT_SPHERE");
+
+        switch (randomJitterNoise)
+        {
+            case RandomJitter.Off:
+                updateMaterialKeyword(false, "RANDOM_JITTER_WHITE");
+                updateMaterialKeyword(false, "RANDOM_JITTER_BLUE");
+                break;
+            case RandomJitter.White:
+                updateMaterialKeyword(true, "RANDOM_JITTER_WHITE");
+                updateMaterialKeyword(false, "RANDOM_JITTER_BLUE");
+                break;
+            case RandomJitter.Blue:
+                updateMaterialKeyword(false, "RANDOM_JITTER_WHITE");
+                updateMaterialKeyword(true, "RANDOM_JITTER_BLUE");
+                break;
+        }
 
         CloudMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
         CloudMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));

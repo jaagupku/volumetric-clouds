@@ -516,7 +516,7 @@ MonoBehaviour:
   debugNoLowFreqNoise: 0
   debugNoHighFreqNoise: 0
   debugDensityOnly: 0
-  steps: 96
+  steps: 48
   adjustDensity: 1
   stepDensityAdjustmentCurve:
     serializedVersion: 2
@@ -524,24 +524,24 @@ MonoBehaviour:
     - serializedVersion: 2
       time: -0.0012444332
       value: 3.0191503
-      inSlope: -11.323347
-      outSlope: -11.323347
+      inSlope: -18.7675
+      outSlope: -18.7675
       tangentMode: 0
     - serializedVersion: 2
       time: 0.2500767
-      value: 1.232814
-      inSlope: -1.7713436
-      outSlope: -1.7713436
+      value: 1.1578017
+      inSlope: -0.90873116
+      outSlope: -0.90873116
       tangentMode: 0
     - serializedVersion: 2
       time: 0.49958354
       value: 0.9970559
-      inSlope: -0.6612613
-      outSlope: -0.6612613
+      inSlope: -0.208904
+      outSlope: -0.208904
       tangentMode: 0
     - serializedVersion: 2
-      time: 1.0005788
-      value: 0.89243925
+      time: 0.9988698
+      value: 0.9138626
       inSlope: -0.08610645
       outSlope: -0.08610645
       tangentMode: 0
@@ -551,7 +551,7 @@ MonoBehaviour:
   allowFlyingInClouds: 1
   downSample: 2
   blueNoiseTexture: {fileID: 2800000, guid: d25158ef7a361f6409bbeb2b86bb2118, type: 3}
-  randomJitter: 1
+  randomJitterNoise: 2
   temporalAntiAliasing: 1
   curlNoise: {fileID: 2800000, guid: 1da5997523109fa4bad6ecd76ad147bc, type: 3}
   lowFreqNoise: {fileID: 4900000, guid: be65ce5dc09da374c9ea55a4334c18c8, type: 3}
@@ -600,7 +600,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 330675052}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 65f5677aa325c184f801528d78a73827, type: 3}
   m_Name: 
@@ -642,7 +642,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 330675052}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 899f97884c6d96b4ca20648ec109a37f, type: 3}
   m_Name: 
