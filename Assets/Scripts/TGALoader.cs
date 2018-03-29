@@ -5,9 +5,10 @@ using UnityEngine;
 // Based upon https://gist.github.com/mikezila/10557162
 // and http://www.paulbourke.net/dataformats/tga/
 public class TGALoader {
-    public static Texture3D load3DFromTGASlices(String path)
+    public static Texture3D load3DFromTGASlices(TextAsset asset)
     {
-        using (BinaryReader br = new BinaryReader(File.OpenRead(path)))
+        Stream s = new MemoryStream(asset.bytes);
+        using (BinaryReader br = new BinaryReader(s))
         {
             br.BaseStream.Seek(12, SeekOrigin.Begin);
 

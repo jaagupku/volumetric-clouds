@@ -1,4 +1,4 @@
-﻿Shader "Clouds/WeatherSystem"
+﻿Shader "Hidden/WeatherSystem"
 {
 	Properties
 	{

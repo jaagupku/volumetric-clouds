@@ -32,6 +32,8 @@ public class CloudsScript : SceneViewFilter
 
     [HeaderAttribute("Cloud modeling")]
     public Texture2D curlNoise;
+    public TextAsset lowFreqNoise;
+    public TextAsset highFreqNoise;
     public float startHeight = 1500.0f;
     public float thickness = 4000.0f;
     public float planetSize = 35000.0f;
@@ -108,23 +110,20 @@ public class CloudsScript : SceneViewFilter
 
     private CloudTemporalAntiAliasing _temporalAntiAliasing;
 
-    [HideInInspector]
-    public Texture2D weatherTexture;
-
-    public Material EffectMaterial
+    public Material CloudMaterial
     {
         get
         {
-            if (!_EffectMaterial)
+            if (!_CloudMaterial)
             {
-                _EffectMaterial = new Material(Shader.Find("Hidden/Clouds"));
-                _EffectMaterial.hideFlags = HideFlags.HideAndDontSave;
+                _CloudMaterial = new Material(Shader.Find("Hidden/Clouds"));
+                _CloudMaterial.hideFlags = HideFlags.HideAndDontSave;
             }
 
-            return _EffectMaterial;
+            return _CloudMaterial;
         }
     }
-    private Material _EffectMaterial;
+    private Material _CloudMaterial;
 
     public Material UpscaleMaterial
     {
@@ -154,8 +153,8 @@ public class CloudsScript : SceneViewFilter
 
     void Start()
     {
-        if (_EffectMaterial)
-            DestroyImmediate(_EffectMaterial);
+        if (_CloudMaterial)
+            DestroyImmediate(_CloudMaterial);
         if (_UpscaleMaterial)
             DestroyImmediate(_UpscaleMaterial);
         QualitySettings.vSyncCount = 1;
@@ -180,8 +179,8 @@ public class CloudsScript : SceneViewFilter
 
     private void OnDestroy()
     {
-        if (_EffectMaterial)
-            DestroyImmediate(_EffectMaterial);
+        if (_CloudMaterial)
+            DestroyImmediate(_CloudMaterial);
     }
 
     public Camera CurrentCamera
@@ -243,7 +242,7 @@ public class CloudsScript : SceneViewFilter
     [ImageEffectOpaque]
     public void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        if (EffectMaterial == null || weatherTexture == null || curlNoise == null || blueNoiseTexture == null)
+        if (CloudMaterial == null || curlNoise == null || blueNoiseTexture == null || lowFreqNoise == null || highFreqNoise == null)
         {
             Graphics.Blit(source, destination); // do nothing
             return;
@@ -251,12 +250,12 @@ public class CloudsScript : SceneViewFilter
 
         if (_cloudShapeTexture == null)
         {
-            _cloudShapeTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseShapePacked.tga");
+            _cloudShapeTexture = TGALoader.load3DFromTGASlices(lowFreqNoise);
         }
 
         if (_cloudErasionTexture == null)
         {
-            _cloudErasionTexture = TGALoader.load3DFromTGASlices("Assets/Textures/noiseErosionPacked.tga");
+            _cloudErasionTexture = TGALoader.load3DFromTGASlices(highFreqNoise);
         }
 
         // Set any custom shader variables here.  For example, you could do:
@@ -291,79 +290,78 @@ public class CloudsScript : SceneViewFilter
         updateMaterialKeyword(randomJitter, "RANDOM_JITTER");
         updateMaterialKeyword(randomUnitSphere, "RANDOM_UNIT_SPHERE");
 
-        EffectMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
-        EffectMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
-        EffectMaterial.SetVector("_ZeroPoint", planetZeroCoordinate);
-        EffectMaterial.SetColor("_SunColor", sunColor);
+        CloudMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
+        CloudMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
+        CloudMaterial.SetVector("_ZeroPoint", planetZeroCoordinate);
+        CloudMaterial.SetColor("_SunColor", sunColor);
         //EffectMaterial.SetColor("_SunColor", sunLight.color);
 
-        EffectMaterial.SetColor("_CloudBaseColor", cloudBaseColor);
-        EffectMaterial.SetColor("_CloudTopColor", cloudTopColor);
-        EffectMaterial.SetFloat("_AmbientLightFactor", ambientLightFactorUpdated);
-        EffectMaterial.SetFloat("_SunLightFactor", sunLightFactorUpdated);
+        CloudMaterial.SetColor("_CloudBaseColor", cloudBaseColor);
+        CloudMaterial.SetColor("_CloudTopColor", cloudTopColor);
+        CloudMaterial.SetFloat("_AmbientLightFactor", ambientLightFactorUpdated);
+        CloudMaterial.SetFloat("_SunLightFactor", sunLightFactorUpdated);
         //EffectMaterial.SetFloat("_AmbientLightFactor", sunLight.intensity * ambientLightFactor * 0.3f);
         //EffectMaterial.SetFloat("_SunLightFactor", sunLight.intensity * sunLightFactor);
 
-        EffectMaterial.SetTexture("_ShapeTexture", _cloudShapeTexture);
-        EffectMaterial.SetTexture("_ErasionTexture", _cloudErasionTexture);
-        EffectMaterial.SetTexture("_WeatherTexture", weatherTexture);
-        EffectMaterial.SetTexture("_CurlNoise", curlNoise);
-        EffectMaterial.SetTexture("_BlueNoise", blueNoiseTexture);
-        EffectMaterial.SetVector("_Randomness", new Vector4(Random.value, Random.value, Random.value, Random.value));
-        EffectMaterial.SetTexture("_AltoClouds", cloudsHighTexture);
+        CloudMaterial.SetTexture("_ShapeTexture", _cloudShapeTexture);
+        CloudMaterial.SetTexture("_ErasionTexture", _cloudErasionTexture);
+        CloudMaterial.SetTexture("_CurlNoise", curlNoise);
+        CloudMaterial.SetTexture("_BlueNoise", blueNoiseTexture);
+        CloudMaterial.SetVector("_Randomness", new Vector4(Random.value, Random.value, Random.value, Random.value));
+        CloudMaterial.SetTexture("_AltoClouds", cloudsHighTexture);
 
-        EffectMaterial.SetFloat("_CoverageHigh", 1.0f - coverageHigh);
-        EffectMaterial.SetFloat("_CoverageHighScale", highCoverageScale * weatheScale * 0.001f);
-        EffectMaterial.SetFloat("_HighCloudsScale", highCloudsScale * 0.002f);
+        CloudMaterial.SetFloat("_CoverageHigh", 1.0f - coverageHigh);
+        CloudMaterial.SetFloat("_CoverageHighScale", highCoverageScale * weatheScale * 0.001f);
+        CloudMaterial.SetFloat("_HighCloudsScale", highCloudsScale * 0.002f);
 
-        EffectMaterial.SetFloat("_CurlDistortAmount", 150.0f + curlDistortAmount);
-        EffectMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
+        CloudMaterial.SetFloat("_CurlDistortAmount", 150.0f + curlDistortAmount);
+        CloudMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
             
-        EffectMaterial.SetFloat("_LightConeRadius", lightConeRadius);
-        EffectMaterial.SetFloat("_LightStepLength", lightStepLength);
-        EffectMaterial.SetFloat("_SphereSize", planetSize);
-        EffectMaterial.SetVector("_CloudHeightMinMax", new Vector2(startHeight, startHeight + thickness));
-        EffectMaterial.SetFloat("_Thickness", thickness);
-        EffectMaterial.SetFloat("_Scale", 0.00001f + scale * 0.0004f);
-        EffectMaterial.SetFloat("_ErasionScale", erasionScale);
-        EffectMaterial.SetVector("_LowFreqMinMax", new Vector4(lowFreqMin, lowFreqMax));
-        EffectMaterial.SetFloat("_HighFreqModifier", highFreqModifier);
-        EffectMaterial.SetFloat("_WeatherScale", weatheScale * 0.00025f);
-        EffectMaterial.SetFloat("_Coverage", 1.0f - coverage);
-        EffectMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
-        EffectMaterial.SetFloat("_HenyeyGreensteinGBackward", -henyeyGreensteinGBackwardLerp);
-        EffectMaterial.SetFloat("_SampleMultiplier", cloudSampleMultiplier);
+        CloudMaterial.SetFloat("_LightConeRadius", lightConeRadius);
+        CloudMaterial.SetFloat("_LightStepLength", lightStepLength);
+        CloudMaterial.SetFloat("_SphereSize", planetSize);
+        CloudMaterial.SetVector("_CloudHeightMinMax", new Vector2(startHeight, startHeight + thickness));
+        CloudMaterial.SetFloat("_Thickness", thickness);
+        CloudMaterial.SetFloat("_Scale", 0.00001f + scale * 0.0004f);
+        CloudMaterial.SetFloat("_ErasionScale", erasionScale);
+        CloudMaterial.SetVector("_LowFreqMinMax", new Vector4(lowFreqMin, lowFreqMax));
+        CloudMaterial.SetFloat("_HighFreqModifier", highFreqModifier);
+        CloudMaterial.SetFloat("_WeatherScale", weatheScale * 0.00025f);
+        CloudMaterial.SetFloat("_Coverage", 1.0f - coverage);
+        CloudMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
+        CloudMaterial.SetFloat("_HenyeyGreensteinGBackward", -henyeyGreensteinGBackwardLerp);
+        CloudMaterial.SetFloat("_SampleMultiplier", cloudSampleMultiplier);
 
-        EffectMaterial.SetFloat("_Density", density);
+        CloudMaterial.SetFloat("_Density", density);
 
-        EffectMaterial.SetFloat("_WindSpeed", _multipliedWindSpeed);
-        EffectMaterial.SetVector("_WindDirection", _windDirectionVector);
-        EffectMaterial.SetVector("_WindOffset", _windOffset);
-        EffectMaterial.SetVector("_CoverageWindOffset", _coverageWindOffset);
-        EffectMaterial.SetVector("_HighCloudsWindOffset", _highCloudsWindOffset);
+        CloudMaterial.SetFloat("_WindSpeed", _multipliedWindSpeed);
+        CloudMaterial.SetVector("_WindDirection", _windDirectionVector);
+        CloudMaterial.SetVector("_WindOffset", _windOffset);
+        CloudMaterial.SetVector("_CoverageWindOffset", _coverageWindOffset);
+        CloudMaterial.SetVector("_HighCloudsWindOffset", _highCloudsWindOffset);
 
         // Test uniforms
-        EffectMaterial.SetFloat("_TestFloat", testFloat);
-        EffectMaterial.SetFloat("_TestFloat2", testFloat2);
-        EffectMaterial.SetVector("_TestGradient", gradientToVector4(testGradient));
+        CloudMaterial.SetFloat("_TestFloat", testFloat);
+        CloudMaterial.SetFloat("_TestFloat2", testFloat2);
+        CloudMaterial.SetVector("_TestGradient", gradientToVector4(testGradient));
 
-        EffectMaterial.SetInt("_Steps", steps);
+        CloudMaterial.SetInt("_Steps", steps);
         if (adjustDensity)
         {
-            EffectMaterial.SetFloat("_InverseStep", stepDensityAdjustmentCurve.Evaluate(steps / 256.0f));
+            CloudMaterial.SetFloat("_InverseStep", stepDensityAdjustmentCurve.Evaluate(steps / 256.0f));
         }
         else
         {
-            EffectMaterial.SetFloat("_InverseStep", 1.0f);
+            CloudMaterial.SetFloat("_InverseStep", 1.0f);
         }
         
-        EffectMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
-        EffectMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
-        EffectMaterial.SetVector("_CameraWS", cameraPos);
-        EffectMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
+        CloudMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
+        CloudMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
+        CloudMaterial.SetVector("_CameraWS", cameraPos);
+        CloudMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
         RenderTexture rtClouds = RenderTexture.GetTemporary((int)(source.width / ((float) downSample)), (int)(source.height / ((float)downSample)), 0, source.format, RenderTextureReadWrite.Default, source.antiAliasing);
-        CustomGraphicsBlit(source, rtClouds, EffectMaterial, 0);
+        CustomGraphicsBlit(source, rtClouds, CloudMaterial, 0);
         
         if (temporalAntiAliasing)
         {
@@ -383,15 +381,15 @@ public class CloudsScript : SceneViewFilter
 
     private void updateMaterialKeyword(bool b, string keyword)
     {
-        if (b != EffectMaterial.IsKeywordEnabled(keyword))
+        if (b != CloudMaterial.IsKeywordEnabled(keyword))
         {
             if (b)
             {
-                EffectMaterial.EnableKeyword(keyword);
+                CloudMaterial.EnableKeyword(keyword);
             }
             else
             {
-                EffectMaterial.DisableKeyword(keyword);
+                CloudMaterial.DisableKeyword(keyword);
             }
         }
     }
