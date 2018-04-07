@@ -35,7 +35,8 @@ public class WeatherRenderer : MonoBehaviour
                 Graphics.Blit(rt, prevWeatherTexture);
                 Graphics.Blit(customWeatherTexture, nextWeatherTexture);
                 startWeatherTextureChange();
-            } else
+            }
+            else
             {
                 GenerateAndChangeWeatherTexture();
             }
@@ -134,11 +135,14 @@ public class WeatherRenderer : MonoBehaviour
             DestroyImmediate(_SystemMaterial);
 
         rt = new RenderTexture(size, size, 0, RenderTextureFormat.ARGB32);
+        rt.wrapMode = TextureWrapMode.Mirror;
         rt.Create();
 
         prevWeatherTexture = new RenderTexture(size, size, 0, RenderTextureFormat.ARGB32);
+        prevWeatherTexture.wrapMode = TextureWrapMode.Mirror;
         prevWeatherTexture.Create();
         nextWeatherTexture = new RenderTexture(size, size, 0, RenderTextureFormat.ARGB32);
+        nextWeatherTexture.wrapMode = TextureWrapMode.Mirror;
         nextWeatherTexture.Create();
 
         clouds.CloudMaterial.SetTexture("_WeatherTexture", rt);

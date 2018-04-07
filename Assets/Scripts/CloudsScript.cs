@@ -10,16 +10,14 @@ public class CloudsScript : SceneViewFilter
     public enum RandomJitter
     {
         Off,
-        White,
-        Blue
+        Random,
+        BlueNoise
     }
 
     [Range(0.0f, 1.0f)]
     public float testFloat = 1.0f;
     [Range(0.0f, 1.0f)]
     public float testFloat2 = 1.0f;
-    public Gradient testGradient;
-    private Vector4 _testGradient;
 
     [HeaderAttribute("Debugging")]
     public bool debugNoLowFreqNoise = false;
@@ -35,10 +33,13 @@ public class CloudsScript : SceneViewFilter
     [Range(1, 8)]
     public int downSample = 1;
     public Texture2D blueNoiseTexture;
-    public RandomJitter randomJitterNoise = RandomJitter.Blue;
+    public RandomJitter randomJitterNoise = RandomJitter.BlueNoise;
     public bool temporalAntiAliasing = true;
 
     [HeaderAttribute("Cloud modeling")]
+    public Gradient gradientLow;
+    public Gradient gradientMed;
+    public Gradient gradientHigh;
     public Texture2D curlNoise;
     public TextAsset lowFreqNoise;
     public TextAsset highFreqNoise;
@@ -215,26 +216,28 @@ public class CloudsScript : SceneViewFilter
             Gizmos.DrawLine(pos, pos + (Vector3)(corners.GetRow(x)));
         }
 
-        
+
         // UNCOMMENT TO DEBUG RAY DIRECTIONS
         Gizmos.color = Color.red;
         int n = 10; // # of intervals
-        for (int x = 1; x < n; x++) {
+        for (int x = 1; x < n; x++)
+        {
             float i_x = (float)x / (float)n;
 
             var w_top = Vector3.Lerp(corners.GetRow(0), corners.GetRow(1), i_x);
             var w_bot = Vector3.Lerp(corners.GetRow(3), corners.GetRow(2), i_x);
-            for (int y = 1; y < n; y++) {
+            for (int y = 1; y < n; y++)
+            {
                 float i_y = (float)y / (float)n;
-                
+
                 var w = Vector3.Lerp(w_top, w_bot, i_y).normalized;
                 Gizmos.DrawLine(pos + (Vector3)w, pos + (Vector3)w * 1.2f);
             }
         }
-        
+
     }
 
-    private Vector4 gradientToVector4( Gradient gradient )
+    private Vector4 gradientToVector4(Gradient gradient)
     {
         if (gradient.colorKeys.Length != 4)
         {
@@ -303,11 +306,11 @@ public class CloudsScript : SceneViewFilter
                 updateMaterialKeyword(false, "RANDOM_JITTER_WHITE");
                 updateMaterialKeyword(false, "RANDOM_JITTER_BLUE");
                 break;
-            case RandomJitter.White:
+            case RandomJitter.Random:
                 updateMaterialKeyword(true, "RANDOM_JITTER_WHITE");
                 updateMaterialKeyword(false, "RANDOM_JITTER_BLUE");
                 break;
-            case RandomJitter.Blue:
+            case RandomJitter.BlueNoise:
                 updateMaterialKeyword(false, "RANDOM_JITTER_WHITE");
                 updateMaterialKeyword(true, "RANDOM_JITTER_BLUE");
                 break;
@@ -317,14 +320,14 @@ public class CloudsScript : SceneViewFilter
         CloudMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
         CloudMaterial.SetVector("_ZeroPoint", planetZeroCoordinate);
         CloudMaterial.SetColor("_SunColor", sunColor);
-        //EffectMaterial.SetColor("_SunColor", sunLight.color);
+        //CloudMaterial.SetColor("_SunColor", sunLight.color);
 
         CloudMaterial.SetColor("_CloudBaseColor", cloudBaseColor);
         CloudMaterial.SetColor("_CloudTopColor", cloudTopColor);
         CloudMaterial.SetFloat("_AmbientLightFactor", ambientLightFactorUpdated);
         CloudMaterial.SetFloat("_SunLightFactor", sunLightFactorUpdated);
-        //EffectMaterial.SetFloat("_AmbientLightFactor", sunLight.intensity * ambientLightFactor * 0.3f);
-        //EffectMaterial.SetFloat("_SunLightFactor", sunLight.intensity * sunLightFactor);
+        //CloudMaterial.SetFloat("_AmbientLightFactor", sunLight.intensity * ambientLightFactor * 0.3f);
+        //CloudMaterial.SetFloat("_SunLightFactor", sunLight.intensity * sunLightFactor);
 
         CloudMaterial.SetTexture("_ShapeTexture", _cloudShapeTexture);
         CloudMaterial.SetTexture("_ErasionTexture", _cloudErasionTexture);
@@ -339,7 +342,7 @@ public class CloudsScript : SceneViewFilter
 
         CloudMaterial.SetFloat("_CurlDistortAmount", 150.0f + curlDistortAmount);
         CloudMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
-            
+
         CloudMaterial.SetFloat("_LightConeRadius", lightConeRadius);
         CloudMaterial.SetFloat("_LightStepLength", lightStepLength);
         CloudMaterial.SetFloat("_SphereSize", planetSize);
@@ -366,7 +369,9 @@ public class CloudsScript : SceneViewFilter
         // Test uniforms
         CloudMaterial.SetFloat("_TestFloat", testFloat);
         CloudMaterial.SetFloat("_TestFloat2", testFloat2);
-        CloudMaterial.SetVector("_TestGradient", gradientToVector4(testGradient));
+        CloudMaterial.SetVector("_Gradient1", gradientToVector4(gradientLow));
+        CloudMaterial.SetVector("_Gradient2", gradientToVector4(gradientMed));
+        CloudMaterial.SetVector("_Gradient3", gradientToVector4(gradientHigh));
 
         CloudMaterial.SetInt("_Steps", steps);
         if (adjustDensity)
@@ -377,15 +382,15 @@ public class CloudsScript : SceneViewFilter
         {
             CloudMaterial.SetFloat("_InverseStep", 1.0f);
         }
-        
+
         CloudMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
         CloudMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
         CloudMaterial.SetVector("_CameraWS", cameraPos);
         CloudMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
-        RenderTexture rtClouds = RenderTexture.GetTemporary((int)(source.width / ((float) downSample)), (int)(source.height / ((float)downSample)), 0, source.format, RenderTextureReadWrite.Default, source.antiAliasing);
+        RenderTexture rtClouds = RenderTexture.GetTemporary((int)(source.width / ((float)downSample)), (int)(source.height / ((float)downSample)), 0, source.format, RenderTextureReadWrite.Default, source.antiAliasing);
         CustomGraphicsBlit(source, rtClouds, CloudMaterial, 0);
-        
+
         if (temporalAntiAliasing)
         {
             RenderTexture rtTemporal = RenderTexture.GetTemporary(rtClouds.width, rtClouds.height, 0, rtClouds.format, RenderTextureReadWrite.Default, source.antiAliasing);
@@ -397,7 +402,7 @@ public class CloudsScript : SceneViewFilter
         {
             UpscaleMaterial.SetTexture("_Clouds", rtClouds);
         }
-        
+
         Graphics.Blit(source, destination, UpscaleMaterial, 0);
         RenderTexture.ReleaseTemporary(rtClouds);
     }
@@ -466,10 +471,10 @@ public class CloudsScript : SceneViewFilter
         RenderTexture.active = dest;
 
         //fxMaterial.SetTexture("_MainTex", source);
-        
+
         GL.PushMatrix();
         GL.LoadOrtho(); // Note: z value of vertices don't make a difference because we are using ortho projection
-        
+
         fxMaterial.SetPass(passNr);
 
         GL.Begin(GL.QUADS);
