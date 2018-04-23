@@ -2,14 +2,14 @@
 using System.Collections;
 using UnityEditor;
 
-[CustomEditor(typeof(WeatherRenderer))]
+[CustomEditor(typeof(WeatherScript))]
 public class WeatherRendererEditor : Editor
 {
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
 
-        WeatherRenderer weatherRenderer = (WeatherRenderer)target;
+        WeatherScript weatherRenderer = (WeatherScript)target;
         if (GUILayout.Button("Generate new weather texture"))
         {
             weatherRenderer.GenerateAndChangeWeatherTexture();

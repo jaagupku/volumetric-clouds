@@ -25,7 +25,8 @@ float depth_resolve_linear(float z)
 		return z * (_ProjectionParams.z - _ProjectionParams.y) + _ProjectionParams.y;
 	#endif
 #else
-	return LinearEyeDepth(z);
+	float depth = LinearEyeDepth(z);
+	return depth;
 #endif
 }
 

@@ -8,20 +8,21 @@
 		Pass
 	{
 		CGPROGRAM
-#pragma vertex vert
-#pragma fragment frag
+	#pragma vertex vert
+	#pragma fragment frag
 
-#include "UnityCG.cginc"
-#include "noiseSimplex.cginc"
-#include "noiseWorley.cginc"
+	#include "UnityCG.cginc"
+	#include "noiseSimplex.cginc"
+	#include "noiseWorley.cginc"
 
-		uniform float3 _Randomness;
+	uniform float3 _Randomness;
 
 	struct v2f
 	{
 		float3 srcPos : TEXCOORD0;
 		float4 pos : SV_POSITION;
 	};
+
 	v2f vert(float4 objPos : POSITION)
 	{
 		v2f o;
@@ -30,7 +31,7 @@
 
 		o.srcPos = mul(unity_ObjectToWorld, objPos).xyz;
 		o.srcPos *= 1.0;
-		o.srcPos.y += _Randomness;
+		o.srcPos.xy += _Randomness.xy;
 
 		return o;
 	}
@@ -81,17 +82,25 @@
 		density += invertedWorley(pos, _Randomness.z + 3.0);
 		density *= coverage;
 
-		float typeHigh = invertedWorley(pos * 0.8, _Randomness.z + 0.5);
-		typeHigh = remap(saturate(simplexNoise / 1.34), saturate(1.0 - typeHigh), 1.0, 0.0, 1.0);
-		typeHigh = smoothstep(0.1, 0.6, typeHigh);
+		float typeHigh = invertedWorley((pos + float2(-142.214, 8434.345)) * 2, _Randomness.z + 2.5);
+		typeHigh += invertedWorley((pos + float2(-142.214, 8434.345)) * 1, _Randomness.z + 2.5);
+		typeHigh = remap(saturate(simplexNoise / 1.34), saturate(1.0 - min(typeHigh, 1.0)), 1.0, 0.0, 1.0);
+		typeHigh = smoothstep(0.1, 0.6, typeHigh) * 0.5;
+		//float typeHigh = 0.0f;
 
-		float typeMed = invertedWorley(pos * 0.5 + float2(0.5, 0.5), _Randomness.z + 1.0);
+		float typeMed = invertedWorley((pos + float2(1236.1234, -74.4356)) * 0.3, _Randomness.z);
 		typeMed = remap(saturate(simplexNoise / 1.34), saturate(1.0 - typeMed), 1.0, 0.0, 1.0);
-		typeMed = smoothstep(0.1, 0.6, typeMed) * 0.5;
 
+		float typeMed2 = invertedWorley((pos + float2(412.1234, -22.4356)) * 0.3, _Randomness.z);
+		typeMed2 = remap(saturate(simplexNoise / 1.34), saturate(1.0 - typeMed), 1.0, 0.0, 1.0);
+		typeMed = (smoothstep(0.1, 0.6, typeMed) + smoothstep(0.1, 0.6, typeMed2)) * 0.5;
+		//float typeMed = 0.0;
 		float type = saturate(typeMed + typeHigh);
 
 		//return fixed4(0, type, 0, 1.0);
+		//pos.xy -= _Randomness.xy;
+		//float a = worley(pos * 8.0, 1);
+		//return fixed4(a, a, a, 1.0);
 
 		fixed4 col = fixed4(coverage, type, density, 1.0);
 		return col;

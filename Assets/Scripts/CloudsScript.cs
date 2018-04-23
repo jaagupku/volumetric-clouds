@@ -14,7 +14,7 @@ public class CloudsScript : SceneViewFilter
         BlueNoise
     }
 
-    [Range(0.0f, 1.0f)]
+    [Range(0.0f, 4.0f)]
     public float testFloat = 1.0f;
     [Range(0.0f, 1.0f)]
     public float testFloat2 = 1.0f;

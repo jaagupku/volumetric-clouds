@@ -2,7 +2,7 @@
 using System.Collections;
 
 [ExecuteInEditMode]
-public class WeatherRenderer : MonoBehaviour
+public class WeatherScript : MonoBehaviour
 {
     public CloudsScript clouds;
     public int size = 512;

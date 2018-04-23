@@ -154,7 +154,7 @@
 
 	float weatherDensity(float3 weatherData)
 	{
-		return mad(weatherData.b, 2.0, 1.0);
+		return weatherData.b + 1.0;//mad(weatherData.b, 2.0, 1.0);
 	}
 
 	// from GPU Pro 7
@@ -204,7 +204,6 @@
 		base_cloud *= getDensityHeightGradient(height_fraction, weather_data);//improvedGradient(_TestGradient, height_fraction);//
 
 		float cloud_coverage = saturate(weather_data.r - _Coverage);
-
 		float base_cloud_with_coverage = saturate(remap(base_cloud, saturate(height_fraction / cloud_coverage), 1.0, 0.0, 1.0)); // saturate ?
 
 		float final_cloud = base_cloud_with_coverage * cloud_coverage;
@@ -235,9 +234,9 @@
 	}
 
 	// GPU Pro 7
-	float beerLaw(float density, float weather)
+	float beerLaw(float density)
 	{
-		float d = -density * _Density * weather;
+		float d = -density * _Density;
 		return max(exp(d), exp(d * 0.5)*0.7);//exp(d);//
 	}
 
@@ -249,14 +248,17 @@
 	}
 
 	// GPU Pro 7
-	float powderEffect(float density)
+	float powderEffect(float density, float cosAngle)
 	{
-		return 1.0 - exp(-density * 2.0);
+		float powder = 1.0 - exp(-density * 2.0);
+		return lerp(1.0f, powder, saturate((-cosAngle * 0.5f) + 0.5f));
 	}
 
-	float calculateLightEnergy(float density, float cosAngle, float powderDensity, float weather) {
-		return 2.0 * beerLaw(density, 1.0 + weather * 0.25) * powderEffect(powderDensity) *
-			max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward));
+	float calculateLightEnergy(float density, float cosAngle, float powderDensity) {
+		//return beerLaw(density, 1.0 + weather * 0.25);
+		float beerPowder = 2.0 * beerLaw(density) * powderEffect(powderDensity, cosAngle);
+		float HG = max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * 0.07 + 0.8;
+		return beerPowder * HG;
 	}
 
 	float randSimple(float n)
@@ -271,6 +273,7 @@
 
 	float3 sampleConeToLight(float3 pos, float3 lightDir, float cosAngle, float density, float3 initialWeather, float lod)
 	{
+		float height_fraction = getHeightFractionForPoint(pos);
 #if defined(RANDOM_UNIT_SPHERE)
 #else
 		const float3 RandomUnitSphere[5] =
@@ -292,14 +295,14 @@
 #else
 			float3 randomOffset = RandomUnitSphere[i] * _LightStepLength * _LightConeRadius * ((float)(i + 1));
 #endif
-			float3 p = pos + randomOffset;
+			float3 p = pos +randomOffset;
 			weather_data = sampleWeather(p);
 			densityAlongCone += sampleCloudDensity(p, weather_data, lod + ((float)i) * 0.5, true) * weatherDensity(weather_data);
 		}
 
-		pos += 8.0 * _LightStepLength * lightDir;
+		pos += 32.0 * _LightStepLength * lightDir;
 		weather_data = sampleWeather(pos);
-		densityAlongCone += sampleCloudDensity(pos, weather_data, lod + 2, false) * weatherDensity(weather_data);
+		densityAlongCone += sampleCloudDensity(pos, weather_data, lod + 2, false) * weatherDensity(weather_data) * 3.0;
 		/*
 		pos += 5.0 * _LightStepLength * lightDir;
 		weather_data = sampleWeather(pos);
@@ -318,19 +321,19 @@
 		j++;
 		}
 		*/
-		return calculateLightEnergy(densityAlongCone, cosAngle, density, initialWeather.b) * _SunColor;
+		return calculateLightEnergy(densityAlongCone, cosAngle, density) * _SunColor;
 	}
 
-	fixed4 raymarch(float3 ro, float3 rd, float steps, float stepSize, float depth)
+	fixed4 raymarch(float3 ro, float3 rd, float steps, float stepSize, float depth, float cosAngle)
 	{
 		float3 pos = ro;
 		fixed4 res = 0.0;
-		float cosAngle = dot(rd, _SunDir);
 		float transmittance = 1.0;
 		float lod = 0.0;
 
-		float zeroCount = 0.0;//
+		float zeroCount = 0.0;
 		float stepLength = 3.0;
+
 
 		for (float i = 0.0; i < steps; i += stepLength)
 		{
@@ -347,9 +350,9 @@
 			float3 weather_data = sampleWeather(pos);
 			if (weather_data.r - _Coverage <= 0.0)
 			{
-				pos += stepSize * rd *stepLength;//
-				zeroCount += 1.0;//
-				stepLength = zeroCount > 10.0 ? BIG_STEP : 1.0;//
+				pos += stepSize * rd *stepLength;
+				zeroCount += 1.0;
+				stepLength = zeroCount > 10.0 ? BIG_STEP : 1.0;
 				continue;
 			}
 
@@ -359,16 +362,16 @@
 			if (cloudDensity > 0.0)
 			{
 
-				zeroCount = 0.0;//
+				zeroCount = 0.0;
 
-				if (stepLength > 1.0)//
-				{//
-					i -= stepLength - 0.1;//
-					pos -= stepSize * rd * (stepLength - 0.1);//
-					weather_data = sampleWeather(pos);//
-					cloudDensity = saturate(sampleCloudDensity(pos, weather_data, lod, true));//
-					particle = float4(cloudDensity, cloudDensity, cloudDensity, cloudDensity);//
-				}//
+				if (stepLength > 1.0)
+				{
+					i -= stepLength - 0.1;
+					pos -= stepSize * rd * (stepLength - 0.1);
+					weather_data = sampleWeather(pos);
+					cloudDensity = saturate(sampleCloudDensity(pos, weather_data, lod, true));
+					particle = float4(cloudDensity, cloudDensity, cloudDensity, cloudDensity);
+				}
 
 				 // TEST VARIABLES
 				 //float testVariable = sampleCloudDensity(pos, weather_data);
@@ -388,16 +391,15 @@
 #endif
 				particle.a = 1.0 - T;
 				particle.rgb *= particle.a;
-
 				res = (1.0 - res.a) * particle + res;
 			}
 			else
 			{
-				zeroCount += 1.0;//
+				zeroCount += 1.0;
 			}
-			stepLength = zeroCount > 10.0 ? BIG_STEP : 1.0;//
+			stepLength = zeroCount > 10.0 ? BIG_STEP : 1.0;
 
-			pos += stepSize * rd * stepLength;//
+			pos += stepSize * rd * stepLength;
 		}
 
 		return res;
@@ -441,7 +443,6 @@
 			}
 			return rayOrigin + t.x * rayDirection;
 		}
-		return rayOrigin;
 	}
 
 	float getRandomRayOffset(float2 uv)
@@ -451,11 +452,11 @@
 		return noise;
 	}
 
-	fixed4 altoClouds(float3 ro, float3 rd, float depth) {
+	fixed4 altoClouds(float3 ro, float3 rd, float depth, float cosAngle) {
 		fixed4 res = 0.0;
-		float3 pos = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
-
-		if (distance(ro, pos) < depth && pos.y > _ZeroPoint.y) {
+		float3 pos = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y + 3000.0);
+		float dist = distance(ro, pos);
+		if (dist < depth && pos.y > _ZeroPoint.y && dist > 0.0) {
 
 			//float coverage = sampleWeather(pos + float3(1500.0, 0.0, 300.0) - float3(_CoverageWindOffset.x, 0.0, _CoverageWindOffset.y)).r;
 			float alto = tex2D(_AltoClouds, (pos.xz + _HighCloudsWindOffset) * _HighCloudsScale).r * 2.0;
@@ -466,12 +467,9 @@
 			alto = remap(alto, 1.0 - coverage, 1.0, 0.0, 1.0);
 
 			alto *= coverage;
-
-			float cosAngle = dot(rd, _SunDir);
-
 			float3 directLight = max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * _SunColor;
 			directLight *= _SunLightFactor * 0.2;
-			float3 ambientLight = _CloudTopColor * _AmbientLightFactor;
+			float3 ambientLight = _CloudTopColor * _AmbientLightFactor * 1.5;
 			float4 aLparticle = float4(min(ambientLight + directLight, 0.7), alto);
 
 			float T = 1.0 - aLparticle.a;
@@ -504,8 +502,8 @@
 		float steps;
 		float stepSize;
 		// Ray start pos
-
 #if defined(ALLOW_IN_CLOUDS)
+		bool aboveClouds = false;
 		float distanceCameraPlanet = distance(_CameraWS, _PlanetCenter);
 		if (distanceCameraPlanet < _SphereSize + _CloudHeightMinMax.x) // Below clouds
 		{
@@ -520,19 +518,11 @@
 		}
 		else if (distanceCameraPlanet > _SphereSize + _CloudHeightMinMax.y) // Above clouds
 		{
-			rs = ro;
-			float3 low = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.x);
-			float3 high = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
-			if (distance(low, rs) > distance(high, rs))
-			{
-				re = low;
-			}
-			else
-			{
-				re = high;
-			}
-			steps = _Steps;
+			rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
+			re = rs + rd * _FarPlane;
+			steps = lerp(_Steps, _Steps * 0.5, rd.y);
 			stepSize = (distance(re, rs)) / steps;
+			aboveClouds = true;
 		}
 		else // In clouds
 		{
@@ -595,10 +585,22 @@
 		//float3 r = mad(rand3(rs), 0.5, 0.5);
 		//return fixed4(r.x, r.y, r.z, 1.0);
 
-		fixed4 clouds2D = altoClouds(rs, rd, depth);
-		fixed4 clouds3D = raymarch(rs, rd, steps, stepSize, depth);
+		float cosAngle = dot(rd, _SunDir);
+		fixed4 clouds2D = altoClouds(ro, rd, depth, cosAngle);
+		fixed4 clouds3D = raymarch(rs, rd, steps, stepSize, depth, cosAngle);
+#if defined(ALLOW_IN_CLOUDS)
+		if (aboveClouds)
+		{
+			return clouds3D * (1.0 - clouds2D.a) + clouds2D;
+		}
+		else
+		{
+			return clouds2D * (1.0 - clouds3D.a) + clouds3D;
+		}
 
+#else
 		return clouds2D * (1.0 - clouds3D.a) + clouds3D;
+#endif
 	}
 		ENDCG
 	}

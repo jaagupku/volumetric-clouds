@@ -23,6 +23,7 @@
 			#pragma multi_compile_fog
 			
 			#include "UnityCG.cginc"
+			#include "noiseSimplex.cginc"
 
 			struct appdata
 			{
@@ -65,9 +66,40 @@
 			{
 				return smoothstep(gradient.x, gradient.y, height) - smoothstep(gradient.z, gradient.w, height);
 			}
+
+			float noise(float x, float y) {
+				return snoise(float2(x, y));
+			}
+
+			float2 ComputeCurl(float x, float y)
+			{
+				float eps = 0.01;
+				float n1, n2, a, b;
+
+				n1 = noise(x, y + eps);
+				n2 = noise(x, y - eps);
+				a = (n1 - n2) / (2.0 * eps);
+				n1 = noise(x + eps, y);
+				n2 = noise(x - eps, y);
+				b = (n1 - n2) / (2.0 * eps);
+
+				float2 curl = float2(a, -b);
+				return curl;
+			}
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
+				//float x = i.uv.x;
+				//float y = i.uv.y;
+				//float scale = 5.0;
+				//x *= scale;
+				//y *= scale;
+				//float2 curl = ComputeCurl(x, y);
+				//curl = (curl + 10.0) * 0.05;
+				//float r = curl.y;
+				//float g = curl.y;
+				//return fixed4(r, r, 0.0, 1.0);
+
 				float a = 0.0;
 				a += improvedGradient(_Gradient, i.uv.y) * _BetterGradient;
 				a += remapBased(_Gradient, i.uv.y) * (1.0 - _BetterGradient);

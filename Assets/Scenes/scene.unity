@@ -484,25 +484,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   testFloat: 0.493
   testFloat2: 0.8
-  debugNoLowFreqNoise: 1
-  debugNoHighFreqNoise: 1
+  debugNoLowFreqNoise: 0
+  debugNoHighFreqNoise: 0
   debugDensityOnly: 0
-  steps: 48
+  steps: 64
   adjustDensity: 1
   stepDensityAdjustmentCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 2
       time: -0.0012444332
-      value: 3.0191503
-      inSlope: -18.7675
-      outSlope: -18.7675
+      value: 2.48885
+      inSlope: -11.911563
+      outSlope: -11.911563
       tangentMode: 0
     - serializedVersion: 2
       time: 0.2500767
-      value: 1.1578017
-      inSlope: -0.90873116
-      outSlope: -0.90873116
+      value: 1.0782424
+      inSlope: -0.5240349
+      outSlope: -0.5240349
       tangentMode: 0
     - serializedVersion: 2
       time: 0.49958354
@@ -536,7 +536,7 @@ MonoBehaviour:
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 0
     ctime1: 4433
-    ctime2: 6168
+    ctime2: 7903
     ctime3: 18119
     ctime4: 0
     ctime5: 0
@@ -616,10 +616,10 @@ MonoBehaviour:
   highFreqNoise: {fileID: 4900000, guid: 344714213bf2a4f419bad2005e3d2622, type: 3}
   startHeight: 1500
   thickness: 3500
-  planetSize: 200000
+  planetSize: 400000
   planetZeroCoordinate: {x: 0, y: 0, z: 0}
-  scale: 0.214
-  erasionScale: 14.9
+  scale: 0.3
+  erasionScale: 13.9
   lowFreqMin: 0.47
   lowFreqMax: 0.8
   highFreqModifier: 0.4
@@ -635,12 +635,12 @@ MonoBehaviour:
   sunLight: {fileID: 1811183545}
   cloudBaseColor: {r: 0.7794118, g: 0.8646881, b: 1, a: 0}
   cloudTopColor: {r: 1, g: 1, b: 1, a: 0}
-  ambientLightFactor: 0.33
-  sunLightFactor: 1.21
+  ambientLightFactor: 0.3
+  sunLightFactor: 1
   highSunColor: {r: 1, g: 0.9882353, b: 0.8235294, a: 1}
   lowSunColor: {r: 1, g: 0.31034485, b: 0, a: 1}
-  henyeyGreensteinGForward: 0.299
-  henyeyGreensteinGBackward: 0.111
+  henyeyGreensteinGForward: 0.54
+  henyeyGreensteinGBackward: 0.5
   lightStepLength: 48
   lightConeRadius: 0.4
   randomUnitSphere: 0
@@ -923,10 +923,10 @@ MonoBehaviour:
   clouds: {fileID: 330675058}
   size: 512
   useCustomTexture: 0
-  customWeatherTexture: {fileID: 2800000, guid: 7b0c0dac351aa97448b755e65b3db531,
+  customWeatherTexture: {fileID: 2800000, guid: 5e469f7849fcc7649a82914aeb729aef,
     type: 3}
   weatherVisualiser: {fileID: 163696191}
-  blendTime: 30
+  blendTime: 1
 --- !u!1 &1063935577
 GameObject:
   m_ObjectHideFlags: 0
@@ -1204,7 +1204,7 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1811183544}
-  m_LocalRotation: {x: 0.09849093, y: 0.73746014, z: -0.11021416, w: 0.65901816}
+  m_LocalRotation: {x: 0.09849093, y: 0.73746014, z: -0.11021416, w: 0.6590182}
   m_LocalPosition: {x: 0, y: 30.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
