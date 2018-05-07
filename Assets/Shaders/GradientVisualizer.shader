@@ -100,6 +100,10 @@
 				//float g = curl.y;
 				//return fixed4(r, r, 0.0, 1.0);
 
+				//float height_fraction = 1.0 - i.uv.y;
+				//float c = height_fraction * pow(1.2 - height_fraction, 0.1);
+				//return fixed4(c, c, c, 1.0);
+
 				float a = 0.0;
 				a += improvedGradient(_Gradient, i.uv.y) * _BetterGradient;
 				a += remapBased(_Gradient, i.uv.y) * (1.0 - _BetterGradient);

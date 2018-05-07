@@ -22,7 +22,7 @@ public class CloudsScript : SceneViewFilter
     [HeaderAttribute("Debugging")]
     public bool debugNoLowFreqNoise = false;
     public bool debugNoHighFreqNoise = false;
-    public bool debugDensityOnly = false;
+    public bool debugNoCurlNoise = false;
 
     [HeaderAttribute("Performance")]
     [Range(1, 256)]
@@ -98,6 +98,7 @@ public class CloudsScript : SceneViewFilter
     public bool randomUnitSphere = true;
     [Range(0.0f, 4.0f)]
     public float density = 1.0f;
+    public bool aLotMoreLightSamples = false;
 
     [HeaderAttribute("Animating")]
     public float globalMultiplier = 1.0f;
@@ -296,9 +297,10 @@ public class CloudsScript : SceneViewFilter
 
         updateMaterialKeyword(debugNoLowFreqNoise, "DEBUG_NO_LOW_FREQ_NOISE");
         updateMaterialKeyword(debugNoHighFreqNoise, "DEBUG_NO_HIGH_FREQ_NOISE");
-        updateMaterialKeyword(debugDensityOnly, "DEBUG_DENSITY");
+        updateMaterialKeyword(debugNoCurlNoise, "DEBUG_NO_CURL");
         updateMaterialKeyword(allowFlyingInClouds, "ALLOW_IN_CLOUDS");
         updateMaterialKeyword(randomUnitSphere, "RANDOM_UNIT_SPHERE");
+        updateMaterialKeyword(aLotMoreLightSamples, "SLOW_LIGHTING");
 
         switch (randomJitterNoise)
         {

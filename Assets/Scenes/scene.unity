@@ -486,7 +486,7 @@ MonoBehaviour:
   testFloat2: 0.8
   debugNoLowFreqNoise: 0
   debugNoHighFreqNoise: 0
-  debugDensityOnly: 0
+  debugNoCurlNoise: 0
   steps: 64
   adjustDensity: 1
   stepDensityAdjustmentCurve:
@@ -625,7 +625,7 @@ MonoBehaviour:
   highFreqModifier: 0.4
   curlDistortScale: 7.44
   curlDistortAmount: 231
-  weatheScale: 0.21
+  weatheScale: 0.2
   coverage: 1.05
   cloudSampleMultiplier: 1
   cloudsHighTexture: {fileID: 2800000, guid: bf87dcae3002f3e43981f196406e7424, type: 3}
@@ -645,6 +645,7 @@ MonoBehaviour:
   lightConeRadius: 0.4
   randomUnitSphere: 0
   density: 1
+  aLotMoreLightSamples: 0
   globalMultiplier: 1
   windSpeed: 15.9
   windDirection: -22.4
