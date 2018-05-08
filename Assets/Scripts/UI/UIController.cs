@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class UIController : MonoBehaviour {
 
+    [SerializeField] private GameObject quitButton;
     [SerializeField] private GameObject settingPanel;
     [SerializeField] private GameObject controlsPanel;
     [SerializeField] private GameObject weatherTexture;
@@ -19,6 +20,11 @@ public class UIController : MonoBehaviour {
     public void GenerateNewWeatherAction()
     {
         weather.GenerateAndChangeWeatherTexture();
+    }
+
+    public void QuitApp()
+    {
+        Application.Quit();
     }
 
     private int previousSelection = -1;
@@ -249,6 +255,9 @@ public class UIController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
-	}
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            quitButton.SetActive(!quitButton.active);
+        }
+    }
 }
