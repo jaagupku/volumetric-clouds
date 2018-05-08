@@ -113,7 +113,7 @@ public class WeatherScript : MonoBehaviour
     IEnumerator LerpWeatherTexture()
     {
         isChangingWeather = true;
-        for (float t = 0f; t <= blendTime; t += Time.deltaTime * (clouds.globalMultiplier == 0.0 ? blendTime : clouds.globalMultiplier))
+        for (float t = 0f; t <= blendTime; t += Time.deltaTime * (clouds.globalMultiplier == 0.0 ? blendTime : Mathf.Abs(clouds.globalMultiplier)))
         {
             BlendMaterial.SetTexture("_PrevWeather", prevWeatherTexture);
             BlendMaterial.SetTexture("_NextWeather", nextWeatherTexture);
