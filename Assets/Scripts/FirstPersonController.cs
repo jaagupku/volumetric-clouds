@@ -88,7 +88,7 @@ public class FirstPersonController : MonoBehaviour {
             }
         }
 
-        if (Input.GetKey("c")) // Crouching
+        if (Input.GetKey(KeyCode.LeftControl)) // Crouching
         {
             cc.height = 0.2f;
             currentSpeed *= 0.25f;

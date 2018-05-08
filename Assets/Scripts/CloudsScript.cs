@@ -14,11 +14,6 @@ public class CloudsScript : SceneViewFilter
         BlueNoise
     }
 
-    [Range(0.0f, 4.0f)]
-    public float testFloat = 1.0f;
-    [Range(0.0f, 1.0f)]
-    public float testFloat2 = 1.0f;
-
     [HeaderAttribute("Debugging")]
     public bool debugNoLowFreqNoise = false;
     public bool debugNoHighFreqNoise = false;
@@ -48,9 +43,9 @@ public class CloudsScript : SceneViewFilter
     public float planetSize = 35000.0f;
     public Vector3 planetZeroCoordinate = new Vector3(0.0f, 0.0f, 0.0f);
     [Range(0.0f, 1.0f)]
-    public float scale = 0.128f;
+    public float scale = 0.3f;
     [Range(0.0f, 32.0f)]
-    public float erasionScale = 18.7f;
+    public float erasionScale = 13.9f;
     [Range(0.0f, 1.0f)]
     public float lowFreqMin = 0.366f;
     [Range(0.0f, 1.0f)]
@@ -58,7 +53,7 @@ public class CloudsScript : SceneViewFilter
     [Range(0.0f, 1.0f)]
     public float highFreqModifier = 0.21f;
     [Range(0.0f, 10.0f)]
-    public float curlDistortScale = 1.78f;
+    public float curlDistortScale = 7.44f;
     [Range(0.0f, 1000.0f)]
     public float curlDistortAmount = 407.0f;
     [Range(0.0f, 1.0f)]
@@ -367,10 +362,7 @@ public class CloudsScript : SceneViewFilter
         CloudMaterial.SetVector("_WindOffset", _windOffset);
         CloudMaterial.SetVector("_CoverageWindOffset", _coverageWindOffset);
         CloudMaterial.SetVector("_HighCloudsWindOffset", _highCloudsWindOffset);
-
-        // Test uniforms
-        CloudMaterial.SetFloat("_TestFloat", testFloat);
-        CloudMaterial.SetFloat("_TestFloat2", testFloat2);
+        
         CloudMaterial.SetVector("_Gradient1", gradientToVector4(gradientLow));
         CloudMaterial.SetVector("_Gradient2", gradientToVector4(gradientMed));
         CloudMaterial.SetVector("_Gradient3", gradientToVector4(gradientHigh));

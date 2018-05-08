@@ -85,10 +85,6 @@
 
 	uniform float _Density;
 
-	// Temporary test uniforms
-	uniform float _TestFloat;
-	uniform float _TestFloat2;
-
 	uniform float _Scale;
 	uniform float _ErasionScale;
 	uniform float _WeatherScale;
