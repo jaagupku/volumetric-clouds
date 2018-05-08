@@ -193,8 +193,7 @@
 		base_cloud = remap(base_cloud, _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0);
 #else
 		float4 low_frequency_noises = tex3Dlod(_ShapeTexture, float4(pos * _Scale, lod));
-		//float low_freq_FBM = low_frequency_noises.g * 0.625 +low_frequency_noises.b * 0.25 + low_frequency_noises.a * 0.125;
-		float base_cloud = low_frequency_noises.r;//remap(low_frequency_noises.r, -(1.0 - low_freq_FBM), 1.0, 0.0, 1.0);//
+		float base_cloud = low_frequency_noises.r;
 		base_cloud = remap(base_cloud * pow(1.2 - height_fraction, 0.1), _LowFreqMinMax.x, _LowFreqMinMax.y, 0.0, 1.0);
 #endif
 		base_cloud *= getDensityHeightGradient(height_fraction, weather_data);
@@ -216,7 +215,7 @@
 			pos += curl_noise * height_fraction * _CurlDistortAmount;
 #endif
 			float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(pos * _Scale * _ErasionScale, lod)).rgb;
-			float high_freq_FBM = high_frequency_noises.r;//high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
+			float high_freq_FBM = high_frequency_noises.r;
 
 			float high_freq_noise_modifier = lerp(1.0 - high_freq_FBM, high_freq_FBM, saturate(height_fraction * 10.0));
 
@@ -235,7 +234,7 @@
 	float beerLaw(float density)
 	{
 		float d = -density * _Density;
-		return max(exp(d), exp(d * 0.5)*0.7);//exp(d);//
+		return max(exp(d), exp(d * 0.5)*0.7);
 	}
 
 	// GPU Pro 7
@@ -253,7 +252,6 @@
 	}
 
 	float calculateLightEnergy(float density, float cosAngle, float powderDensity) {
-		//return beerLaw(density, 1.0 + weather * 0.25);
 		float beerPowder = 2.0 * beerLaw(density) * powderEffect(powderDensity, cosAngle);
 		float HG = max(HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGForward), HenyeyGreensteinPhase(cosAngle, _HenyeyGreensteinGBackward)) * 0.07 + 0.8;
 		return beerPowder * HG;
@@ -328,7 +326,6 @@
 	{
 		float3 pos = ro;
 		fixed4 res = 0.0;
-		//float transmittance = 1.0;
 		float lod = 0.0;
 
 		float zeroCount = 0.0;
@@ -373,13 +370,6 @@
 					particle = float4(cloudDensity, cloudDensity, cloudDensity, cloudDensity);
 				}
 
-				 // TEST VARIABLES
-				 //float testVariable = sampleCloudDensity(pos, weather_data);
-				 //return fixed4(testVariable, testVariable, testVariable, 1.0);
-
-				//float T = 1.0 - particle.a;
-				//transmittance *= T;
-
 				float3 lightEnergy = sampleConeToLight(pos, _SunDir, cosAngle, cloudDensity, weather_data, lod);
 				float3 ambientLight = lerp(_CloudBaseColor, _CloudTopColor, getHeightFractionForPoint(pos));
 
@@ -388,7 +378,6 @@
 
 				particle.rgb = lightEnergy + ambientLight;
 
-				//particle.a = 1.0 - T;
 				particle.rgb *= particle.a;
 				res = (1.0 - res.a) * particle + res;
 			}
@@ -457,7 +446,6 @@
 		float dist = distance(ro, pos);
 		if (dist < depth && pos.y > _ZeroPoint.y && dist > 0.0) {
 
-			//float coverage = sampleWeather(pos + float3(1500.0, 0.0, 300.0) - float3(_CoverageWindOffset.x, 0.0, _CoverageWindOffset.y)).r;
 			float alto = tex2D(_AltoClouds, (pos.xz + _HighCloudsWindOffset) * _HighCloudsScale).r * 2.0;
 
 			float coverage = tex2Dlod(_WeatherTexture, float4((pos.xz + _HighCloudsWindOffset) * _CoverageHighScale, 0, 0)).r;
@@ -487,8 +475,6 @@
 		float3 ro = _CameraWS;
 		// ray direction
 		float3 rd = normalize(i.ray.xyz);
-
-		//float3 planetCenter = float3(ro.x, ro.y - _SphereSize, ro.z);
 
 		float2 duv = i.uv;
 #if UNITY_UV_STARTS_AT_TOP
@@ -542,16 +528,6 @@
 		steps = lerp(_Steps, _Steps * 0.5, rd.y);
 		stepSize = (distance(re, rs)) / steps;
 #endif
-		// TEXTURE TESTING
-		//float3 high_frequency_noises = tex3Dlod(_ErasionTexture, float4(rs * 7.0 * _Scale * _ErasionScale, 0)).rgb;
-		//float high_freq_FBM = high_frequency_noises.r * 0.625 + high_frequency_noises.g * 0.25 + high_frequency_noises.b * 0.125;
-		//fixed4 test = tex3Dlod(_ErasionTexture, float4(rs * _ErasionScale * _Scale, 0));
-		//fixed4 test = tex3Dlod(_ShapeTexture, float4(rs * _Scale, 0));
-		//fixed4 test = tex2Dlod(_CurlNoise, float4(rs.xz * _Scale * _CurlDistortScale, 0, 0));
-		//return test;
-
-		//fixed c = test.r;//high_freq_FBM;
-		//return fixed4(c, c, c, 1.0);
 
 		// Ray end pos
 
@@ -562,8 +538,6 @@
 #if defined(RANDOM_JITTER_BLUE)
 		rs += rd * stepSize * BIG_STEP * 0.75 * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy);
 #endif
-		//float2 ruv = (duv + _Randomness.xy) * _ScreenParams.xy / 512.0;
-		//return tex2D(_BlueNoise, ruv);
 
 		// Convert from depth buffer (eye space) to true distance from camera
 		// This is done by multiplying the eyespace depth by the length of the "z-normalized"
@@ -574,15 +548,6 @@
 			depth = 100.0;
 		}
 		depth *= _FarPlane;
-		//if (length(rs - ro) < depth) {
-		//	return tex2Dlod(_WeatherTexture, float4(rs.xz * _WeatherScale + float2(0.5, 0.5), 0, 0));
-		//	return tex3Dlod(_ShapeTexture, float4(rs * _Scale, 0));
-		//}
-
-		//fixed a = tex3Dlod(_ShapeTexture, float4(rs * _Scale * 2.0, 0)).r;
-		//return fixed4(a, a, a, 1.0);
-		//float3 r = mad(rand3(rs), 0.5, 0.5);
-		//return fixed4(r.x, r.y, r.z, 1.0);
 
 		float cosAngle = dot(rd, _SunDir);
 		fixed4 clouds2D = altoClouds(ro, rd, depth, cosAngle);

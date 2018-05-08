@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class UIController : MonoBehaviour {
 
+    [SerializeField] private Transform light;
     [SerializeField] private GameObject quitButton;
     [SerializeField] private GameObject settingPanel;
     [SerializeField] private GameObject controlsPanel;
@@ -51,14 +52,14 @@ public class UIController : MonoBehaviour {
 
     public void HideShowWeatherTexture(Text text)
     {
-        weatherTexture.SetActive(!weatherTexture.active);
-        text.text = weatherTexture.active ? "Hide" : "Show";
+        weatherTexture.SetActive(!weatherTexture.activeSelf);
+        text.text = weatherTexture.activeSelf ? "Hide" : "Show";
     }
 
     public void HideShowControls(Text text)
     {
-        controlsPanel.SetActive(!controlsPanel.active);
-        text.text = controlsPanel.active ? "Hide controls" : "Show controls";
+        controlsPanel.SetActive(!controlsPanel.activeSelf);
+        text.text = controlsPanel.activeSelf ? "Hide controls" : "Show controls";
     }
 
     public void ToggleLowFreq()
@@ -79,6 +80,16 @@ public class UIController : MonoBehaviour {
     public void OnChangeStepCount(Slider slider)
     {
         clouds.steps = (int) slider.value;
+    }
+
+    public void OnChangeLightX(Slider slider)
+    {
+        light.localRotation = Quaternion.Euler((float)slider.value, light.transform.eulerAngles.y, 0);
+    }
+
+    public void OnChangeLightY(Slider slider)
+    {
+        light.localRotation = Quaternion.Euler(light.transform.eulerAngles.x, (float)slider.value, 0);
     }
 
     public void OnChangeDownsample(Slider slider)
@@ -257,7 +268,7 @@ public class UIController : MonoBehaviour {
 	void Update () {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            quitButton.SetActive(!quitButton.active);
+            quitButton.SetActive(!quitButton.activeSelf);
         }
     }
 }

@@ -167,7 +167,6 @@ public class CloudsScript : SceneViewFilter
 
     private void Update()
     {
-        //steps = 6 + ((int) ((Mathf.Sin(Time.time / 1f) + 1f) / 2f * 250f));
         _multipliedWindSpeed = windSpeed * globalMultiplier;
         float angleWind = windDirection * Mathf.Deg2Rad;
         _windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.25f, Mathf.Sin(angleWind));
@@ -264,10 +263,6 @@ public class CloudsScript : SceneViewFilter
         {
             _cloudErasionTexture = TGALoader.load3DFromTGASlices(highFreqNoise);
         }
-
-        // Set any custom shader variables here.  For example, you could do:
-        // EffectMaterial.SetFloat("_MyVariable", 13.37f);
-        // This would set the shader uniform _MyVariable to value 13.37
         Vector3 cameraPos = CurrentCamera.transform.position;
         // sunLight.rotation.x 364 -> 339, 175 -> 201
 
@@ -275,7 +270,6 @@ public class CloudsScript : SceneViewFilter
         float ambientLightFactorUpdated = ambientLightFactor;
         float sunAngle = sunLight.transform.eulerAngles.x;
         Color sunColor = highSunColor;
-        Color cloudTopColorMix = cloudBaseColor;
         float henyeyGreensteinGBackwardLerp = henyeyGreensteinGBackward;
 
         if (sunAngle > 170.0f)
@@ -287,7 +281,6 @@ public class CloudsScript : SceneViewFilter
             henyeyGreensteinGBackwardLerp *= gradient2 * gradient;
             ambientLightFactorUpdated = Mathf.Max(0.02f, ambientLightFactorUpdated);
             sunColor = Color.Lerp(lowSunColor, highSunColor, gradient2);
-            cloudTopColorMix = Color.Lerp(lowSunColor, cloudTopColor, gradient);
         }
 
         updateMaterialKeyword(debugNoLowFreqNoise, "DEBUG_NO_LOW_FREQ_NOISE");
