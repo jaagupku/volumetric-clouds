@@ -4,7 +4,7 @@ using System.Collections;
 [ExecuteInEditMode]
 public class WeatherScript : MonoBehaviour
 {
-    public CloudsScript clouds;
+    public CloudScript clouds;
     public int size = 512;
     public bool useCustomTexture = false;
     public Texture2D customWeatherTexture;
@@ -13,11 +13,11 @@ public class WeatherScript : MonoBehaviour
 
     private MeshRenderer weatherVisualiserRenderer;
 
-    private RenderTexture rt;
+    private RenderTexture rt; // weather texture at the moment
     private bool isChangingWeather = false;
 
-    private RenderTexture prevWeatherTexture;
-    private RenderTexture nextWeatherTexture;
+    private RenderTexture prevWeatherTexture; // previous weather texture
+    private RenderTexture nextWeatherTexture; // next weather texture
 
     private bool _useUserWeatherTexture;
 
@@ -34,7 +34,7 @@ public class WeatherScript : MonoBehaviour
             {
                 Graphics.Blit(rt, prevWeatherTexture);
                 Graphics.Blit(customWeatherTexture, nextWeatherTexture);
-                startWeatherTextureChange();
+                StartWeatherTextureChange();
             }
             else
             {
@@ -78,13 +78,15 @@ public class WeatherScript : MonoBehaviour
         weatherVisualiserRenderer = weatherVisualiser.GetComponent<MeshRenderer>();
     }
 
+    // sets weather textures on clouds and visualiser object
     private void setWeatherTexture()
     {
         clouds.CloudMaterial.SetTexture("_WeatherTexture", rt);
         weatherVisualiserRenderer.sharedMaterial.SetTexture("_MainTex", rt);
     }
 
-    private void startWeatherTextureChange()
+    // starts weather texture change routine
+    public void StartWeatherTextureChange()
     {
         if (isChangingWeather)
         {
@@ -93,6 +95,7 @@ public class WeatherScript : MonoBehaviour
         StartCoroutine("LerpWeatherTexture");
     }
 
+    // generates new weather texture
     public void GenerateWeatherTexture()
     {
         SystemMaterial.SetVector("_Randomness", new Vector3(Random.Range(-1000, 1000), Random.Range(-1000, 1000), Random.value * 1.5f - 0.2f));
@@ -101,19 +104,21 @@ public class WeatherScript : MonoBehaviour
         Graphics.Blit(rt, nextWeatherTexture);
     }
 
+    // calls StartWeatherTextureChange() and GenerateWeatherTexture()
     public void GenerateAndChangeWeatherTexture()
     {
         GenerateWeatherTexture();
         if (!useCustomWeatherTexture)
         {
-            startWeatherTextureChange();
+            StartWeatherTextureChange();
         }
     }
 
+    // lerps between previous and next weather texture
     IEnumerator LerpWeatherTexture()
     {
         isChangingWeather = true;
-        for (float t = 0f; t <= blendTime; t += Time.deltaTime * (clouds.globalMultiplier == 0.0 ? blendTime : clouds.globalMultiplier))
+        for (float t = 0f; t <= blendTime; t += Time.deltaTime * (clouds.globalMultiplier == 0.0 ? blendTime : Mathf.Abs(clouds.globalMultiplier)))
         {
             BlendMaterial.SetTexture("_PrevWeather", prevWeatherTexture);
             BlendMaterial.SetTexture("_NextWeather", nextWeatherTexture);

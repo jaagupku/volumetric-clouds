@@ -60,7 +60,7 @@
 	fixed4 frag(v2f i) : SV_Target
 	{
 		float2 pos = i.srcPos.xy;
-		float simplexNoise = 0.0;
+		float simplexNoise = 0.0; // sample multiple simplex noises and create fBm
 		simplexNoise += 1.0 * snoise(pos * 2.0);
 		simplexNoise += 0.2 * snoise(pos * 9.0);
 		simplexNoise += 0.09 * snoise(pos * 18.0);
@@ -68,20 +68,20 @@
 
 		simplexNoise = mad(simplexNoise, 0.5, 0.5);
 
-		float cell = 0.0;
+		float cell = 0.0; // create worley noise fBm
 
 		cell += 1.0 * invertedWorley(pos * 4.0);
 		cell += 0.4 * invertedWorley(pos * 9.0);
 		cell += 0.1 * invertedWorley(pos * 19.0);
 
-		float coverage = remap(saturate(simplexNoise / 1.34), saturate(1.0 - cell / 1.5), 1.0, 0.0, 1.0);
+		float coverage = remap(saturate(simplexNoise / 1.34), saturate(1.0 - cell / 1.5), 1.0, 0.0, 1.0); // modulate simplex noise by worley noise for coverage
+		coverage = saturate(mad(coverage, 0.55, 0.65)); // transfer most of it to range [0, 1]
 
-		coverage = saturate(mad(coverage, 0.55, 0.65));
-
-		float density = 0.0;
+		float density = 0.0; // for rain clouds use one low frew worley noise sample
 		density += invertedWorley(pos, _Randomness.z + 3.0);
 		density *= coverage;
 
+		// use worley noise at different offsets to calculate different cloud types
 		float typeHigh = invertedWorley((pos + float2(-142.214, 8434.345)) * 2, _Randomness.z + 2.5);
 		typeHigh += invertedWorley((pos + float2(-142.214, 8434.345)) * 1, _Randomness.z + 2.5);
 		typeHigh = remap(saturate(simplexNoise / 1.34), saturate(1.0 - min(typeHigh, 1.0)), 1.0, 0.0, 1.0);

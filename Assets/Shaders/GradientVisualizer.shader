@@ -67,11 +67,28 @@
 				return smoothstep(gradient.x, gradient.y, height) - smoothstep(gradient.z, gradient.w, height);
 			}
 
-			float noise(float x, float y) {
+			float noise(float x, float y)
+			{
 				return snoise(float2(x, y));
 			}
 
-			float2 ComputeCurl(float x, float y)
+			float noise1(float x, float y, float z)
+			{
+				return snoise(float3(x, y, z));
+			}
+
+			float noise2(float x, float y, float z)
+			{
+				return snoise(float3(x, y, z + 31.1));
+			}
+
+			float noise3(float x, float y, float z)
+			{
+				return snoise(float3(x, y, z + 182.1));
+			}
+
+			// based on http://petewerner.blogspot.com.ee/2015/02/intro-to-curl-noise.html
+			float2 ComputeCurl(float x, float y) // 2D curl noise
 			{
 				float eps = 0.01;
 				float n1, n2, a, b;
@@ -86,30 +103,90 @@
 				float2 curl = float2(a, -b);
 				return curl;
 			}
+
+			// based on http://petewerner.blogspot.com.ee/2015/02/intro-to-curl-noise.html
+			float3 ComputeCurl(float x, float y, float z, float eps) // 3D Curl noise function
+			{
+				float n1, n2, a, b;
+				float3 curl;
+				n1 = noise3(x, y + eps, z);
+				n2 = noise3(x, y - eps, z);
+				a = (n1 - n2) / (2 * eps);
+
+				n1 = noise2(x, y, z + eps);
+				n2 = noise2(x, y, z - eps);
+				b = (n1 - n2) / (2 * eps);
+
+				curl.x = a - b;
+
+				n1 = noise1(x, y, z + eps);
+				n2 = noise1(x, y, z - eps);
+				a = (n1 - n2) / (2 * eps);
+
+				n1 = noise3(x + eps, y, z);
+				n2 = noise3(x + eps, y, z);
+				b = (n1 - n2) / (2 * eps);
+
+				curl.y = a - b;
+				n1 = noise2(x + eps, y, z);
+				n2 = noise2(x - eps, y, z);
+				a = (n1 - n2) / (2 * eps);
+
+				n1 = noise1(x, y + eps, z);
+				n2 = noise1(x, y - eps, z);
+				b = (n1 - n2) / (2 * eps);
+
+				curl.z = a - b;
+
+				return curl;
+			}
+
+			fixed4 curlNoise(float2 uv)
+			{
+				float x = 0.0;
+				float y = 0.0;
+				float z = 0.0;
+				float3 curl = 0.0;
+				float scale = 7.0;
+				x = uv.x * scale;
+				y = uv.y * scale;
+				float3 cl = ComputeCurl(x, y, z, 0.01);
+				curl += cl * 0.5;// / (1.0 + j * 2.0);
+
+				scale = 18.0;
+				x = uv.x * scale;
+				y = uv.y * scale;
+				cl = ComputeCurl(x, y, z, 0.01);
+				curl += cl * 0.3;// / (1.0 + j * 2.0);
+
+				scale = 27.0;
+				x = uv.x * scale;
+				y = uv.y * scale;
+				cl = ComputeCurl(x, y, z, 0.01);
+				curl += cl * 0.2;// / (1.0 + j * 2.0);
+
+				curl = (curl + 2.0) * 0.2;
+
+				float r = curl.x;
+				float g = curl.y;
+				float b = curl.z;
+
+				float c = r;
+				//return fixed4(c, c, c, 1.0);
+				return fixed4(r, g, b, 1.0);
+			}
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				//float x = i.uv.x;
-				//float y = i.uv.y;
-				//float scale = 5.0;
-				//x *= scale;
-				//y *= scale;
-				//float2 curl = ComputeCurl(x, y);
-				//curl = (curl + 10.0) * 0.05;
-				//float r = curl.y;
-				//float g = curl.y;
-				//return fixed4(r, r, 0.0, 1.0);
-
-				//float height_fraction = 1.0 - i.uv.y;
-				//float c = height_fraction * pow(1.2 - height_fraction, 0.1);
-				//return fixed4(c, c, c, 1.0);
-
+				//return curl(i.uv);
+				
 				float a = 0.0;
 				a += improvedGradient(_Gradient, i.uv.y) * _BetterGradient;
 				a += remapBased(_Gradient, i.uv.y) * (1.0 - _BetterGradient);
 				fixed4 col = fixed4(a, a, a, 1.0);
 				UNITY_APPLY_FOG(i.fogCoord, col);
 				return col;
+				
 			}
 			ENDCG
 		}
