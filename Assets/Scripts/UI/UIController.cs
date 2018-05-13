@@ -12,11 +12,13 @@ public class UIController : MonoBehaviour {
     [SerializeField] private GameObject weatherTexture;
     [SerializeField] private List<Button> buttons;
     [SerializeField] private List<GameObject> settingPanels;
+    [SerializeField] private Text fpsText;
 
     [SerializeField] private CloudScript clouds;
     [SerializeField] private WeatherScript weather;
     
     private ColorBlock selectedButtonColors;
+    private float deltaTime = 0.0f;
 
     public void GenerateNewWeatherAction()
     {
@@ -279,5 +281,10 @@ public class UIController : MonoBehaviour {
         {
             quitButton.SetActive(!quitButton.activeSelf);
         }
+
+        deltaTime += (Time.unscaledDeltaTime - deltaTime) * 0.1f;
+        float msec = deltaTime * 1000.0f;
+        float fps = 1.0f / deltaTime;
+        fpsText.text = "FPS: " + fps;
     }
 }
