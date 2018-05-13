@@ -21,8 +21,15 @@ public class FirstPersonController : MonoBehaviour {
 	void Start () {
         cc = GetComponent<CharacterController>();
         rotate = true;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        SetCursorState(CursorLockMode.Locked);
+    }
+
+    // Apply requested cursor state
+    private void SetCursorState(CursorLockMode wantedMode)
+    {
+        Cursor.lockState = wantedMode;
+        // Hide cursor when locking
+        Cursor.visible = (CursorLockMode.Locked != wantedMode);
     }
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -113,8 +120,7 @@ public class FirstPersonController : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             rotate = !rotate;
-            Cursor.lockState = rotate ? CursorLockMode.Locked : CursorLockMode.None;
-            Cursor.visible = !Cursor.visible;
+            SetCursorState(rotate ? CursorLockMode.Locked : CursorLockMode.None);
         }
     }
 }

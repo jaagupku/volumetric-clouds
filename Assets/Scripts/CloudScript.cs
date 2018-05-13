@@ -4,7 +4,7 @@ using UnityEngine;
 [ExecuteInEditMode]
 [RequireComponent(typeof(Camera), typeof(CloudTemporalAntiAliasing))]
 [AddComponentMenu("Effects/Clouds")]
-public class CloudsScript : SceneViewFilter
+public class CloudScript : SceneViewFilter
 {
 
     public enum RandomJitter
@@ -45,7 +45,7 @@ public class CloudsScript : SceneViewFilter
     [Range(0.0f, 1.0f)]
     public float scale = 0.3f;
     [Range(0.0f, 32.0f)]
-    public float erasionScale = 13.9f;
+    public float detailScale = 13.9f;
     [Range(0.0f, 1.0f)]
     public float lowFreqMin = 0.366f;
     [Range(0.0f, 1.0f)]
@@ -57,7 +57,7 @@ public class CloudsScript : SceneViewFilter
     [Range(0.0f, 1000.0f)]
     public float curlDistortAmount = 407.0f;
     [Range(0.0f, 1.0f)]
-    public float weatheScale = 0.1f;
+    public float weatherScale = 0.1f;
     [Range(0.0f, 2.0f)]
     public float coverage = 0.92f;
     [Range(0.0f, 2.0f)]
@@ -104,14 +104,14 @@ public class CloudsScript : SceneViewFilter
     public float highCloudsWindSpeed = 49.2f;
     public float highCloudsWindDirection = 77.8f;
 
-    private Vector3 _windOffset = new Vector3(0.0f, 0.0f, 0.0f);
-    private Vector2 _coverageWindOffset = new Vector3(0.0f, 0.0f);
-    private Vector2 _highCloudsWindOffset = new Vector3(1500.0f, -900.0f);
+    private Vector3 _windOffset;
+    private Vector2 _coverageWindOffset;
+    private Vector2 _highCloudsWindOffset;
     private Vector3 _windDirectionVector;
     private float _multipliedWindSpeed;
 
     private Texture3D _cloudShapeTexture;
-    private Texture3D _cloudErasionTexture;
+    private Texture3D _cloudDetailTexture;
 
     private CloudTemporalAntiAliasing _temporalAntiAliasing;
 
@@ -162,11 +162,14 @@ public class CloudsScript : SceneViewFilter
             DestroyImmediate(_CloudMaterial);
         if (_UpscaleMaterial)
             DestroyImmediate(_UpscaleMaterial);
-        QualitySettings.vSyncCount = 1;
+        _windOffset = new Vector3(0.0f, 0.0f, 0.0f);
+        _coverageWindOffset = new Vector3(0.5f / (weatherScale * 0.00025f), 0.5f / (weatherScale * 0.00025f));
+        _highCloudsWindOffset = new Vector3(1500.0f, -900.0f);
     }
 
     private void Update()
     {
+        // updates wind offsets
         _multipliedWindSpeed = windSpeed * globalMultiplier;
         float angleWind = windDirection * Mathf.Deg2Rad;
         _windDirectionVector = new Vector3(Mathf.Cos(angleWind), -0.25f, Mathf.Sin(angleWind));
@@ -248,20 +251,20 @@ public class CloudsScript : SceneViewFilter
     [ImageEffectOpaque]
     public void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        if (CloudMaterial == null || curlNoise == null || blueNoiseTexture == null || lowFreqNoise == null || highFreqNoise == null)
+        if (CloudMaterial == null || curlNoise == null || blueNoiseTexture == null || lowFreqNoise == null || highFreqNoise == null) // if some script public parameters are missing, do nothing
         {
             Graphics.Blit(source, destination); // do nothing
             return;
         }
 
-        if (_cloudShapeTexture == null)
+        if (_cloudShapeTexture == null) // if shape texture is missing load it in
         {
             _cloudShapeTexture = TGALoader.load3DFromTGASlices(lowFreqNoise);
         }
 
-        if (_cloudErasionTexture == null)
+        if (_cloudDetailTexture == null) // if detail texture is missing load it in
         {
-            _cloudErasionTexture = TGALoader.load3DFromTGASlices(highFreqNoise);
+            _cloudDetailTexture = TGALoader.load3DFromTGASlices(highFreqNoise);
         }
         Vector3 cameraPos = CurrentCamera.transform.position;
         // sunLight.rotation.x 364 -> 339, 175 -> 201
@@ -272,7 +275,9 @@ public class CloudsScript : SceneViewFilter
         Color sunColor = highSunColor;
         float henyeyGreensteinGBackwardLerp = henyeyGreensteinGBackward;
 
-        if (sunAngle > 170.0f)
+        float noiseScale = 0.00001f + scale * 0.0004f;
+
+        if (sunAngle > 170.0f) // change sunlight color based on sun's height.
         {
             float gradient = Mathf.Max(0.0f, (sunAngle - 330.0f) / 30.0f);
             float gradient2 = gradient * gradient;
@@ -306,6 +311,7 @@ public class CloudsScript : SceneViewFilter
                 break;
         }
 
+        // send uniforms to shader
         CloudMaterial.SetVector("_SunDir", sunLight.transform ? (-sunLight.transform.forward).normalized : Vector3.up);
         CloudMaterial.SetVector("_PlanetCenter", planetZeroCoordinate - new Vector3(0, planetSize, 0));
         CloudMaterial.SetVector("_ZeroPoint", planetZeroCoordinate);
@@ -320,33 +326,41 @@ public class CloudsScript : SceneViewFilter
         //CloudMaterial.SetFloat("_SunLightFactor", sunLight.intensity * sunLightFactor);
 
         CloudMaterial.SetTexture("_ShapeTexture", _cloudShapeTexture);
-        CloudMaterial.SetTexture("_ErasionTexture", _cloudErasionTexture);
+        CloudMaterial.SetTexture("_DetailTexture", _cloudDetailTexture);
         CloudMaterial.SetTexture("_CurlNoise", curlNoise);
         CloudMaterial.SetTexture("_BlueNoise", blueNoiseTexture);
         CloudMaterial.SetVector("_Randomness", new Vector4(Random.value, Random.value, Random.value, Random.value));
         CloudMaterial.SetTexture("_AltoClouds", cloudsHighTexture);
 
         CloudMaterial.SetFloat("_CoverageHigh", 1.0f - coverageHigh);
-        CloudMaterial.SetFloat("_CoverageHighScale", highCoverageScale * weatheScale * 0.001f);
+        CloudMaterial.SetFloat("_CoverageHighScale", highCoverageScale * weatherScale * 0.001f);
         CloudMaterial.SetFloat("_HighCloudsScale", highCloudsScale * 0.002f);
 
         CloudMaterial.SetFloat("_CurlDistortAmount", 150.0f + curlDistortAmount);
-        CloudMaterial.SetFloat("_CurlDistortScale", curlDistortScale);
+        CloudMaterial.SetFloat("_CurlDistortScale", curlDistortScale * noiseScale);
 
         CloudMaterial.SetFloat("_LightConeRadius", lightConeRadius);
         CloudMaterial.SetFloat("_LightStepLength", lightStepLength);
         CloudMaterial.SetFloat("_SphereSize", planetSize);
         CloudMaterial.SetVector("_CloudHeightMinMax", new Vector2(startHeight, startHeight + thickness));
         CloudMaterial.SetFloat("_Thickness", thickness);
-        CloudMaterial.SetFloat("_Scale", 0.00001f + scale * 0.0004f);
-        CloudMaterial.SetFloat("_ErasionScale", erasionScale);
+        CloudMaterial.SetFloat("_Scale", noiseScale);
+        CloudMaterial.SetFloat("_DetailScale", detailScale * noiseScale);
         CloudMaterial.SetVector("_LowFreqMinMax", new Vector4(lowFreqMin, lowFreqMax));
         CloudMaterial.SetFloat("_HighFreqModifier", highFreqModifier);
-        CloudMaterial.SetFloat("_WeatherScale", weatheScale * 0.00025f);
+        CloudMaterial.SetFloat("_WeatherScale", weatherScale * 0.00025f);
         CloudMaterial.SetFloat("_Coverage", 1.0f - coverage);
         CloudMaterial.SetFloat("_HenyeyGreensteinGForward", henyeyGreensteinGForward);
         CloudMaterial.SetFloat("_HenyeyGreensteinGBackward", -henyeyGreensteinGBackwardLerp);
-        CloudMaterial.SetFloat("_SampleMultiplier", cloudSampleMultiplier);
+        if (adjustDensity)
+        {
+            CloudMaterial.SetFloat("_SampleMultiplier", cloudSampleMultiplier * stepDensityAdjustmentCurve.Evaluate(steps / 256.0f));
+        }
+        else
+        {
+            CloudMaterial.SetFloat("_SampleMultiplier", cloudSampleMultiplier);
+        }
+        
 
         CloudMaterial.SetFloat("_Density", density);
 
@@ -361,24 +375,17 @@ public class CloudsScript : SceneViewFilter
         CloudMaterial.SetVector("_Gradient3", gradientToVector4(gradientHigh));
 
         CloudMaterial.SetInt("_Steps", steps);
-        if (adjustDensity)
-        {
-            CloudMaterial.SetFloat("_InverseStep", stepDensityAdjustmentCurve.Evaluate(steps / 256.0f));
-        }
-        else
-        {
-            CloudMaterial.SetFloat("_InverseStep", 1.0f);
-        }
 
         CloudMaterial.SetMatrix("_FrustumCornersES", GetFrustumCorners(CurrentCamera));
         CloudMaterial.SetMatrix("_CameraInvViewMatrix", CurrentCamera.cameraToWorldMatrix);
         CloudMaterial.SetVector("_CameraWS", cameraPos);
         CloudMaterial.SetFloat("_FarPlane", CurrentCamera.farClipPlane);
 
+        // get cloud render texture and render clouds to it
         RenderTexture rtClouds = RenderTexture.GetTemporary((int)(source.width / ((float)downSample)), (int)(source.height / ((float)downSample)), 0, source.format, RenderTextureReadWrite.Default, source.antiAliasing);
         CustomGraphicsBlit(source, rtClouds, CloudMaterial, 0);
 
-        if (temporalAntiAliasing)
+        if (temporalAntiAliasing) // if TAA is enabled, then apply it to cloud render texture
         {
             RenderTexture rtTemporal = RenderTexture.GetTemporary(rtClouds.width, rtClouds.height, 0, rtClouds.format, RenderTextureReadWrite.Default, source.antiAliasing);
             _temporalAntiAliasing.TemporalAntiAliasing(rtClouds, rtTemporal);
@@ -389,7 +396,7 @@ public class CloudsScript : SceneViewFilter
         {
             UpscaleMaterial.SetTexture("_Clouds", rtClouds);
         }
-
+        // Apply clouds to background
         Graphics.Blit(source, destination, UpscaleMaterial, 0);
         RenderTexture.ReleaseTemporary(rtClouds);
     }

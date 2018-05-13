@@ -5,6 +5,8 @@ using UnityEngine;
 // Based upon https://gist.github.com/mikezila/10557162
 // and http://www.paulbourke.net/dataformats/tga/
 public class TGALoader {
+    // Loads 3D texture slices from TGA file as Unity TextAsset. This is needed, because slices are on one row sequentially
+    // and shape texture dimensions are ~16000x128. Unity allows up to ~8000 pixel size textures, so it is loaded in with custom loader.
     public static Texture3D load3DFromTGASlices(TextAsset asset)
     {
         Stream s = new MemoryStream(asset.bytes);

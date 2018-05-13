@@ -13,7 +13,7 @@ public class UIController : MonoBehaviour {
     [SerializeField] private List<Button> buttons;
     [SerializeField] private List<GameObject> settingPanels;
 
-    [SerializeField] private CloudsScript clouds;
+    [SerializeField] private CloudScript clouds;
     [SerializeField] private WeatherScript weather;
     
     private ColorBlock selectedButtonColors;
@@ -105,6 +105,15 @@ public class UIController : MonoBehaviour {
     public void ToggleTemporal()
     {
         clouds.temporalAntiAliasing = !clouds.temporalAntiAliasing;
+        TemporalReprojection c = GameObject.Find("Main Camera").GetComponent<TemporalReprojection>();
+        FrustumJitter f = GameObject.Find("Main Camera").GetComponent<FrustumJitter>();
+        c.enabled = !c.enabled;
+        f.enabled = !f.enabled;
+    }
+
+    public void TogglePreCalculatedWeatherTexture()
+    {
+        weather.useCustomTexture = !weather.useCustomTexture;
     }
 
     public void RandomOffsetDropdown(Dropdown dropdown)
@@ -112,13 +121,13 @@ public class UIController : MonoBehaviour {
         switch(dropdown.value)
         {
             case 0:
-                clouds.randomJitterNoise = CloudsScript.RandomJitter.Off;
+                clouds.randomJitterNoise = CloudScript.RandomJitter.Off;
                 break;
             case 1:
-                clouds.randomJitterNoise = CloudsScript.RandomJitter.Random;
+                clouds.randomJitterNoise = CloudScript.RandomJitter.Random;
                 break;
             case 2:
-                clouds.randomJitterNoise = CloudsScript.RandomJitter.BlueNoise;
+                clouds.randomJitterNoise = CloudScript.RandomJitter.BlueNoise;
                 break;
         }
     }
@@ -130,7 +139,7 @@ public class UIController : MonoBehaviour {
 
     public void OnChangeDetailScale(Slider slider)
     {
-        clouds.erasionScale = (float)slider.value;
+        clouds.detailScale = (float)slider.value;
     }
 
     public void OnChangeCurlScale(Slider slider)
@@ -140,7 +149,7 @@ public class UIController : MonoBehaviour {
 
     public void OnChangeWeatherScale(Slider slider)
     {
-        clouds.weatheScale = (float)slider.value;
+        clouds.weatherScale = (float)slider.value;
     }
 
     public void OnChangeShapeMin(Slider slider)
