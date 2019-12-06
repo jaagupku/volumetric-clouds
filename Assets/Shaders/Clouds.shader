@@ -7,7 +7,7 @@
 		SubShader
 	{
 		// No culling or depth
-		Cull Off ZWrite Off ZTest Off
+		Cull Off ZWrite On ZTest Off
 
 		Pass
 	{
@@ -322,15 +322,24 @@
 		return calculateLightEnergy(densityAlongCone, cosAngle, density) * _SunColor;
 	}
 
-	// raymarches clouds
-	fixed4 raymarch(float3 ro, float3 rd, float steps, float depth, float cosAngle)
+	struct rayOut
 	{
+		fixed4 color;
+		fixed depth;
+	};
+
+
+	// raymarches clouds
+	rayOut raymarch(float3 ro, float3 rd, float steps, float depth, float cosAngle)
+	{
+		rayOut o;
+		o.depth = depth;
 		float3 pos = ro;
 		fixed4 res = 0.0; // cloud color
 		float lod = 0.0;
 		float zeroCount = 0.0; // number of times cloud sample has been 0
 		float stepLength = BIG_STEP; // step length multiplier, 1.0 when doing small steps
-
+		bool depthChanged = false;
 
 		for (float i = 0.0; i < steps; i += stepLength)
 		{
@@ -357,6 +366,10 @@
 			if (cloudDensity > 0.0) // check if cloud density is > 0
 			{
 				zeroCount = 0.0; // set zero cloud density counter to 0
+				if (!depthChanged) {
+					o.depth = distance(ro, pos);
+					depthChanged = true;
+				}
 
 				if (stepLength > 1.0) // if we did big steps before
 				{
@@ -386,8 +399,8 @@
 
 			pos += rd * stepLength; // march forward
 		}
-
-		return res;
+		o.color = res;
+		return o;
 	}
 
 	// https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
@@ -464,8 +477,20 @@
 		return saturate(res);
 	}
 
-	fixed4 frag(v2f i) : SV_Target
+
+
+	struct fragOutput
 	{
+		fixed4 color : SV_Target0;
+		fixed4 depth : SV_Target1;
+	};
+
+	fragOutput frag(v2f i)
+	{
+		rayOut o;
+		fragOutput fo;
+		o.color = 0.0;
+		
 		// ray origin (camera position)
 		float3 ro = _CameraWS;
 		// ray direction
@@ -476,6 +501,16 @@
 		if (_MainTex_TexelSize.y < 0)
 			duv.y = 1 - duv.y;
 #endif
+		// Convert from depth buffer (eye space) to true distance from camera
+		// This is done by multiplying the eyespace depth by the length of the "z-normalized"
+		// ray (see vert()).  Think of similar triangles: the view-space z-distance between a point
+		// and the camera is proportional to the absolute distance.
+		o.depth = Linear01Depth(tex2D(_CameraDepthTexture, duv).r);
+		if (o.depth == 1.0) {
+			o.depth = 100.0;
+		}
+		o.depth *= _FarPlane;
+
 		float3 rs;
 		float3 re;
 
@@ -491,7 +526,9 @@
 			rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.x);
 			if (rs.y < _ZeroPoint.y) // If ray starting position is below horizon
 			{
-				return 0.0;
+				fo.color = o.color;
+				fo.depth = fixed4(o.depth, o.depth, o.depth, 1.0);
+				return fo;
 			}
 			re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
 			steps = lerp(_Steps, _Steps * 0.5, rd.y);
@@ -518,7 +555,9 @@
 		rs = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.x);
 		if (rs.y < _ZeroPoint.y) // If ray starting position is below horizon
 		{
-			return 0.0;
+			fo.color = o.color;
+			fo.depth = fixed4(o.depth, o.depth, o.depth, 1.0);
+			return fo;
 		}
 		re = findRayStartPos(ro, rd, _PlanetCenter, _SphereSize + _CloudHeightMinMax.y);
 		steps = lerp(_Steps, _Steps * 0.5, rd.y);
@@ -535,31 +574,28 @@
 		rs += rd * stepSize * BIG_STEP * 0.75 * getRandomRayOffset((duv + _Randomness.xy) * _ScreenParams.xy * _BlueNoise_TexelSize.xy);
 #endif
 
-		// Convert from depth buffer (eye space) to true distance from camera
-		// This is done by multiplying the eyespace depth by the length of the "z-normalized"
-		// ray (see vert()).  Think of similar triangles: the view-space z-distance between a point
-		// and the camera is proportional to the absolute distance.
-		float depth = Linear01Depth(tex2D(_CameraDepthTexture, duv).r);
-		if (depth == 1.0) {
-			depth = 100.0;
-		}
-		depth *= _FarPlane;
 		float cosAngle = dot(rd, _SunDir);
-		fixed4 clouds2D = altoClouds(ro, rd, depth, cosAngle); // sample high altitude clouds
-		fixed4 clouds3D = raymarch(rs, rd * stepSize, steps, depth, cosAngle); // raymarch volumetric clouds
+		fixed4 clouds2D = altoClouds(ro, rd, o.depth, cosAngle); // sample high altitude clouds
+		rayOut clouds3D = raymarch(rs, rd * stepSize, steps, o.depth, cosAngle); // raymarch volumetric clouds
 #if defined(ALLOW_IN_CLOUDS)
 		if (aboveClouds) // use premultiplied alpha blending to combine low and high clouds
 		{
-			return clouds3D * (1.0 - clouds2D.a) + clouds2D;
+			o.color = clouds3D.color * (1.0 - clouds2D.a) + clouds2D;
 		}
 		else
 		{
-			return clouds2D * (1.0 - clouds3D.a) + clouds3D;
+			o.color = clouds2D * (1.0 - clouds3D.color.a) + clouds3D.color;
 		}
 
 #else
-		return clouds2D * (1.0 - clouds3D.a) + clouds3D;
+		o.color = clouds2D * (1.0 - clouds3D.color.a) + clouds3D.color;
 #endif
+		o.depth = clouds3D.depth / _FarPlane;
+		//float aa = o.depth;
+		//o.color = fixed4(aa, aa, aa, 1.0);
+		fo.color = o.color;
+		fo.depth = fixed4(o.depth, o.depth, o.depth, 1.0);
+		return fo;
 	}
 		ENDCG
 	}

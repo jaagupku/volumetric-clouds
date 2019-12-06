@@ -154,6 +154,7 @@ public class CloudScript : SceneViewFilter
     void Awake()
     {
         Reset();
+        Application.targetFrameRate = 60;
     }
 
     void Start()
@@ -360,7 +361,6 @@ public class CloudScript : SceneViewFilter
         {
             CloudMaterial.SetFloat("_SampleMultiplier", cloudSampleMultiplier);
         }
-        
 
         CloudMaterial.SetFloat("_Density", density);
 
@@ -384,7 +384,6 @@ public class CloudScript : SceneViewFilter
         // get cloud render texture and render clouds to it
         RenderTexture rtClouds = RenderTexture.GetTemporary((int)(source.width / ((float)downSample)), (int)(source.height / ((float)downSample)), 0, source.format, RenderTextureReadWrite.Default, source.antiAliasing);
         CustomGraphicsBlit(source, rtClouds, CloudMaterial, 0);
-
         if (temporalAntiAliasing) // if TAA is enabled, then apply it to cloud render texture
         {
             RenderTexture rtTemporal = RenderTexture.GetTemporary(rtClouds.width, rtClouds.height, 0, rtClouds.format, RenderTextureReadWrite.Default, source.antiAliasing);
