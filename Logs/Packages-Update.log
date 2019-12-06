@@ -52,3 +52,17 @@ The following packages were added:
   com.unity.modules.xr@1.0.0
   com.unity.multiplayer-hlapi@1.0.2
   com.unity.xr.legacyinputhelpers@2.0.2
+
+=== Fri Dec  6 22:13:08 2019
+
+Packages were changed.
+Update Mode: resetToDefaultDependencies
+
+The following packages were removed:
+  com.unity.2d.sprite@1.0.0
+  com.unity.2d.tilemap@1.0.0
+  com.unity.ads@2.0.8
+  com.unity.analytics@3.3.4
+  com.unity.multiplayer-hlapi@1.0.2
+  com.unity.purchasing@2.0.6
+  com.unity.xr.legacyinputhelpers@2.0.2
