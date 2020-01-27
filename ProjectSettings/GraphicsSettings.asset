@@ -41,6 +41,7 @@ GraphicsSettings:
   - {fileID: 4800000, guid: 2e063ea68d8772f4f8b4ebaa8a46c61c, type: 3}
   - {fileID: 4800000, guid: da806f8e56a69844993c619778a0db21, type: 3}
   - {fileID: 4800000, guid: 242d9353195480c4f955926382904571, type: 3}
+  - {fileID: 16001, guid: 0000000000000000f000000000000000, type: 0}
   m_PreloadedShaders: []
   m_SpritesDefaultMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000,
     type: 0}
@@ -65,3 +66,4 @@ GraphicsSettings:
   m_AlbedoSwatchInfos: []
   m_LightsUseLinearIntensity: 0
   m_LightsUseColorTemperature: 0
+  m_LogWhenShaderIsCompiled: 0

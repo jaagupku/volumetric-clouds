@@ -107,10 +107,12 @@ public class UIController : MonoBehaviour {
     public void ToggleTemporal()
     {
         clouds.temporalAntiAliasing = !clouds.temporalAntiAliasing;
-        TemporalReprojection c = GameObject.Find("Main Camera").GetComponent<TemporalReprojection>();
-        FrustumJitter f = GameObject.Find("Main Camera").GetComponent<FrustumJitter>();
+        UnityStandardAssets.CinematicEffects.TemporalAntiAliasing c = GameObject.Find("Main Camera").GetComponent<UnityStandardAssets.CinematicEffects.TemporalAntiAliasing>();
+        UnityEngine.Rendering.PostProcessing.PostProcessLayer f = GameObject.Find("Main Camera").GetComponent<UnityEngine.Rendering.PostProcessing.PostProcessLayer>();
+        CloudTemporalAntiAliasing a = GameObject.Find("Main Camera").GetComponent<CloudTemporalAntiAliasing>();
         c.enabled = !c.enabled;
         f.enabled = !f.enabled;
+        a.enabled = !a.enabled;
     }
 
     public void TogglePreCalculatedWeatherTexture()

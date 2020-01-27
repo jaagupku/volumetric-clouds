@@ -16,12 +16,19 @@ public class FirstPersonController : MonoBehaviour {
     private bool flying = false;
 
     private float verticalVelocity = 0;
+    private Vector3 startPosition = new Vector3(744.1368f, 185.5f, 1460.9f);
+    private Transform t;
+    private Animation anim;
+    private Vector3 prevPosition;
+    private Quaternion prevRotation;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
         cc = GetComponent<CharacterController>();
         rotate = true;
         SetCursorState(CursorLockMode.Locked);
+        t = GetComponent<Transform>();
+        anim = GetComponent<Animation>();
     }
 
     // Apply requested cursor state
@@ -52,7 +59,7 @@ public class FirstPersonController : MonoBehaviour {
         float horizontal = Input.GetAxis("Horizontal");
         currentSpeed = speed;
 
-        if (rotate)
+        if (rotate && !anim.enabled)
         {
             float rotX = Input.GetAxis("Mouse X");
             verticalRotation -= Input.GetAxis("Mouse Y");
@@ -113,6 +120,26 @@ public class FirstPersonController : MonoBehaviour {
         if (Input.GetKeyDown("f")) // Toggle Flying
         {
             flying = !flying;
+        }
+
+        if (Input.GetKeyDown("1") || Input.GetKeyDown("[1]"))
+        {
+            t.position = startPosition;
+            t.rotation = Quaternion.Euler(0, 0, 0);
+        }
+        else if (Input.GetKeyDown("2") || Input.GetKeyDown("[2]"))
+        {
+            if (anim.enabled)
+            {
+                t.position = prevPosition;
+                t.rotation = prevRotation;
+            }
+            else
+            {
+                prevPosition = t.position;
+                prevRotation = t.rotation;
+            }
+            anim.enabled = !anim.enabled;
         }
 
         Vector3 movement = transform.rotation * new Vector3(horizontal, verticalVelocity, vertical);

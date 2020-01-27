@@ -148,7 +148,7 @@ public class CloudScript : SceneViewFilter
     void Reset()
     {
         _temporalAntiAliasing = GetComponent<CloudTemporalAntiAliasing>();
-        _temporalAntiAliasing.SetCamera(CurrentCamera);
+        //_temporalAntiAliasing.SetCamera(CurrentCamera);
     }
 
     void Awake()
